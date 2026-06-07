@@ -1,0 +1,59 @@
+# 배포(운영) 기본 설정. 모든 값은 환경변수로 주입한다(시크릿 하드코딩 금지).
+# 로컬 개발은 application-local.yml(profile: local), 테스트는 application-test.yml(profile: test).
+spring:
+  application:
+    name: server
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ieoseo}
+    username: ${DB_USERNAME:ieoseo}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# 이어서 도메인 정책 (FRD 5.3 / 4.11). 하루 최대 예약 시간(분) — 자동 이월 8시간 상한.
+ieoseo:
+  max-daily-minutes: ${IEOSEO_MAX_DAILY_MINUTES:480}
+  # 스케줄러 잡 크론(#55, docs/06-백엔드/스케줄링.md). zone 은 코드에서 Asia/Seoul 고정.
+  schedule:
+    debt-generation: ${IEOSEO_SCHEDULE_DEBT_GENERATION:0 5 0 * * *}
+    recurrence-expansion: ${IEOSEO_SCHEDULE_RECURRENCE_EXPANSION:0 10 0 * * *}
+    recurrence-horizon-days: ${IEOSEO_SCHEDULE_RECURRENCE_HORIZON_DAYS:14}
+    notifications: ${IEOSEO_SCHEDULE_NOTIFICATIONS:0 0 9 * * *}
+  # 인증 토큰(JWT) 설정. secret 은 환경변수(JWT_SECRET)로만 주입(폴백 없음 — 미설정 시 기동 실패).
+  # ※ Supabase Auth(ADR-0014) 전환 시 이 자체 JWT 설정은 제거 예정.
+  jwt:
+    secret: ${JWT_SECRET}
+    access-ttl-seconds: ${JWT_ACCESS_TTL_SECONDS:1800}
+    refresh-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:1209600}
+    refresh-store: ${JWT_REFRESH_STORE:}
+  # 소셜 OAuth provider client-id (ID token aud 검증/앱 식별). 값은 환경변수로만.
+  oauth:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+    apple:
+      client-id: ${APPLE_CLIENT_ID:}
+    kakao:
+      client-id: ${KAKAO_CLIENT_ID:}
+  # 관측성(Sentry). DSN 미설정(빈 값)이면 비활성. 시크릿은 환경변수로만(ADR-0011).
+  sentry:
+    dsn: ${SENTRY_DSN:}
+    environment: ${SENTRY_ENVIRONMENT:production}
+    release: ${SENTRY_RELEASE:}
+    traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.0}

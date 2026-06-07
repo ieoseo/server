@@ -66,6 +66,13 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // 테스트는 test 프로파일 → src/test/resources/application-test.yml 로드(슬라이스용 auto-config 제외).
+    systemProperty("spring.profiles.active", "test")
+}
+
+// 로컬 실행은 local 프로파일 → application-local.yml(.env import·localhost 기본값).
+tasks.named<JavaExec>("bootRun") {
+    systemProperty("spring.profiles.active", "local")
 }
 
 // 컨테이너 빌드 시 실행 가능한 bootJar 하나만 남기도록 plain jar 비활성(Dockerfile COPY 모호성 제거).

@@ -1,6 +1,26 @@
-# 로컬 개발 프로파일 (SPRING_PROFILES_ACTIVE=local — bootRun 기본값).
-# server/.env(KEY=VALUE)를 property source 로 로드한다. 시크릿(JWT_SECRET·DB 비번 등)은 .env 로만 주입(커밋 금지).
-# DB/Redis localhost 기본값은 application.yml 의 ${...:기본} 으로 이미 적용된다.
 spring:
-  config:
-    import: "optional:file:.env[.properties]"
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ieoseo
+    username: ieoseo
+    password: ieoseo
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ""
+
+ieoseo:
+  jwt:
+    secret: local-development-only-not-a-real-secret-min-32b
+  oauth:
+    google:
+      client-id: ""
+    apple:
+      client-id: ""
+    kakao:
+      client-id: ""
+  sentry:
+    dsn: ""
+    environment: local
+    release: ""
+    traces-sample-rate: 0.0

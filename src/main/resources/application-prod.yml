@@ -1,0 +1,30 @@
+# 배포(운영) 프로파일 (SPRING_PROFILES_ACTIVE=prod — 컨테이너 기본).
+# 실제 값은 이 파일에 두지 않는다 — 전부 배포 환경변수(${ENV})로 주입(미설정 시 기동 실패).
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+
+ieoseo:
+  # ※ jwt·oauth 는 Supabase Auth(ADR-0014) 전환 시 제거 예정.
+  jwt:
+    secret: ${JWT_SECRET}
+    refresh-store: ${JWT_REFRESH_STORE}
+  oauth:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID}
+    apple:
+      client-id: ${APPLE_CLIENT_ID}
+    kakao:
+      client-id: ${KAKAO_CLIENT_ID}
+  sentry:
+    dsn: ${SENTRY_DSN}
+    environment: ${SENTRY_ENVIRONMENT}
+    release: ${SENTRY_RELEASE}
+    traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE}

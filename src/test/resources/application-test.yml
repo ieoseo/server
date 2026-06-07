@@ -1,10 +1,7 @@
-# 테스트 전용 설정(test classpath 우선). 실 DB/Redis 없이 컨텍스트가 로드되도록
-# DataSource/JPA/Redis auto-config 를 제외한다(testcontainers 미도입 — 이슈 #6 지시).
+# 테스트 프로파일 (SPRING_PROFILES_ACTIVE=test — build.gradle.kts 에서 지정).
+# 실 DB/Redis 없이 컨텍스트가 로드되도록 DataSource/JPA/Redis auto-config 를 제외한다.
+# 공통(application.yml)이 안 주는 환경값(jwt secret·oauth·sentry)만 테스트 고정값으로 둔다.
 spring:
-  application:
-    name: server
-  # 테스트는 H2 임베디드(@DataJpaTest) + Hibernate ddl-auto 로 스키마를 만든다.
-  # Flyway 마이그레이션은 PostgreSQL 전용 SQL 이므로 테스트에서는 비활성화한다.
   flyway:
     enabled: false
   autoconfigure:
@@ -15,10 +12,19 @@ spring:
       - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
       - org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration
 
-# 테스트 전용 더미 JWT 시크릿(실 시크릿 아님 — 32바이트+ 명백한 test 값).
-# refresh-store 미설정 → in-memory 폴백(슬라이스가 Redis 요구 안 함).
 ieoseo:
+  # 테스트 전용 더미 JWT 시크릿(실 시크릿 아님). access/refresh TTL 은 공통에서 상속.
   jwt:
     secret: test-only-jwt-secret-please-change-32bytes-min
-    access-ttl-seconds: 1800
-    refresh-ttl-seconds: 1209600
+  oauth:
+    google:
+      client-id: ""
+    apple:
+      client-id: ""
+    kakao:
+      client-id: ""
+  sentry:
+    dsn: ""
+    environment: test
+    release: ""
+    traces-sample-rate: 0.0

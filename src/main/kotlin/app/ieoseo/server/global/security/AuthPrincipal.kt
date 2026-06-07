@@ -1,0 +1,12 @@
+package app.ieoseo.server.global.security
+
+import java.util.UUID
+
+/**
+ * 인증된 요청 주체. SupabaseJwtAuthenticationConverter 가 Supabase JWT(sub/email)에서 추출해
+ * SecurityContext 의 Authentication principal 로 주입한다.
+ */
+data class AuthPrincipal(
+    val userId: UUID,
+    val email: String,
+)

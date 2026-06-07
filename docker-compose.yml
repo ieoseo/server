@@ -1,0 +1,25 @@
+# 이어서 로컬 개발용 — PostgreSQL 만.
+# 연동값은 같은 디렉터리의 server/.env 에서 가져온다(docker compose 변수 보간).
+# 사용: cd server && cp .env.example .env && docker compose up -d db
+# 종료: docker compose down  (데이터 삭제까지: docker compose down -v)
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ieoseo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ieoseo}
+      POSTGRES_USER: ${DB_USERNAME:-ieoseo}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ieoseo}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - ieoseo-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-ieoseo} -d ${POSTGRES_DB:-ieoseo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ieoseo-pgdata:

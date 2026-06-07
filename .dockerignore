@@ -1,0 +1,12 @@
+# 컨테이너 빌드 컨텍스트에서 제외(이미지·캐시·시크릿 유입 방지).
+.git
+.gradle
+build
+.idea
+*.iml
+# 시크릿: .env 는 절대 이미지에 넣지 않는다(런타임 env 로 주입).
+.env
+.env.*
+!.env.example
+# 로컬 도커(개발 DB)
+docker-compose.yml

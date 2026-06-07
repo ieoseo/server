@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: server
+
+  # 로컬 개발 시 server/.env(KEY=VALUE)를 property source로 로드한다.
+  # optional: 파일이 없으면(CI/운영) 무시 → 실제 OS 환경변수로 주입(우선순위 더 높음).
+  config:
+    import: "optional:file:.env[.properties]"
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ieoseo}
+    username: ${DB_USERNAME:ieoseo}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# 이어서 도메인 정책 (FRD 5.3 / 4.11). 하루 최대 예약 시간(분) — 자동 이월 8시간 상한.
+ieoseo:
+  max-daily-minutes: ${IEOSEO_MAX_DAILY_MINUTES:480}
+  # 스케줄러 잡 크론(#55, docs/06-백엔드/스케줄링.md). 잡 로직은 @Service.run(today),
+  # @Scheduled 는 그 메서드 호출만 한다. zone 은 코드에서 Asia/Seoul 고정. 운영은 환경변수로 덮어쓴다.
+  schedule:
+    # 자정 부채 생성(어제 미완료 → 미룬 시간). 매일 00:05.
+    debt-generation: ${IEOSEO_SCHEDULE_DEBT_GENERATION:0 5 0 * * *}
+    # 반복 인스턴스 생성(다가오는 기간 펼치기). 매일 00:10.
+    recurrence-expansion: ${IEOSEO_SCHEDULE_RECURRENCE_EXPANSION:0 10 0 * * *}
+    # 반복 인스턴스 생성 기간(일). today ~ today+N.
+    recurrence-horizon-days: ${IEOSEO_SCHEDULE_RECURRENCE_HORIZON_DAYS:14}
+    # D-Day/스트릭 알림. 매일 09:00.
+    notifications: ${IEOSEO_SCHEDULE_NOTIFICATIONS:0 0 9 * * *}
+  # 인증 토큰(JWT) 설정. 계약: docs/06-백엔드/인증-도메인.md §3.
+  # secret 은 환경변수(JWT_SECRET)로만 주입한다(하드코딩 금지). 운영은 32바이트+ 무작위.
+  jwt:
+    # JWT_SECRET 미설정 시 dev 임시값으로 기동(로컬/데모용 — 운영은 반드시 JWT_SECRET 주입).
+    # 임시값은 명백히 안전하지 않으며, 재시작 시 기존 토큰이 무효가 될 수 있다.
+    secret: ${JWT_SECRET:dev-temporary-insecure-jwt-secret-change-me-please-32b+}
+    access-ttl-seconds: ${JWT_ACCESS_TTL_SECONDS:1800}
+    refresh-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:1209600}
+    # refresh 저장소. 운영은 redis, 미설정 시 in-memory 폴백(단일 인스턴스 한정).
+    refresh-store: ${JWT_REFRESH_STORE:}
+  # 소셜 OAuth provider 설정. 계약: docs/05-API/auth.md(#37).
+  # client-id 는 ID token aud 검증(Google/Apple)·앱 식별(Kakao)에 쓰인다.
+  # 값(시크릿 포함)은 .env/환경변수로만 주입한다(미설정 시 해당 provider 검증 거부).
+  oauth:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+    apple:
+      client-id: ${APPLE_CLIENT_ID:}
+    kakao:
+      client-id: ${KAKAO_CLIENT_ID:}
+  # 관측성(Sentry). DSN 미설정(빈 값)이면 Sentry 비활성(외부 전송 0). 계약: ADR-0011.
+  # DSN 은 시크릿 — .env/환경변수로만 주입(하드코딩 금지).
+  sentry:
+    dsn: ${SENTRY_DSN:}
+    environment: ${SENTRY_ENVIRONMENT:local}
+    release: ${SENTRY_RELEASE:}
+    traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.0}
+
+# 시크릿은 환경변수로만 주입한다(하드코딩 금지). 로컬 기본값은 비밀이 아닌 placeholder.
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  # test 프로파일: 실 DB/Redis 없이 슬라이스/컨텍스트 테스트가 뜨도록 auto-config 제외.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+      - org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration

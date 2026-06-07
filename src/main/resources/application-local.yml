@@ -8,17 +8,14 @@ spring:
       host: localhost
       port: 6379
       password: ""
+  # Supabase Auth(Resource Server) — 로컬 placeholder 공개값. 실제 프로젝트로 교체(ADR-0014).
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://YOUR-PROJECT.supabase.co/auth/v1/.well-known/jwks.json
 
 ieoseo:
-  jwt:
-    secret: local-development-only-not-a-real-secret-min-32b
-  oauth:
-    google:
-      client-id: ""
-    apple:
-      client-id: ""
-    kakao:
-      client-id: ""
   sentry:
     dsn: ""
     environment: local

@@ -10,19 +10,14 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
+  # Supabase Auth(Resource Server) — JWKS 로 Supabase JWT 검증(ADR-0014).
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${SUPABASE_JWKS_URI}
 
 ieoseo:
-  # ※ jwt·oauth 는 Supabase Auth(ADR-0014) 전환 시 제거 예정.
-  jwt:
-    secret: ${JWT_SECRET}
-    refresh-store: ${JWT_REFRESH_STORE}
-  oauth:
-    google:
-      client-id: ${GOOGLE_CLIENT_ID}
-    apple:
-      client-id: ${APPLE_CLIENT_ID}
-    kakao:
-      client-id: ${KAKAO_CLIENT_ID}
   sentry:
     dsn: ${SENTRY_DSN}
     environment: ${SENTRY_ENVIRONMENT}

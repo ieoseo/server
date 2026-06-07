@@ -1,7 +1,6 @@
 package app.ieoseo.server.presentation.debt
 
 import app.ieoseo.server.infrastructure.security.AuthPrincipal
-import app.ieoseo.server.infrastructure.security.JwtProvider
 import app.ieoseo.server.infrastructure.security.SecurityConfig
 import app.ieoseo.server.domain.debt.DebtStatus
 import app.ieoseo.server.application.debt.TimeDebtService
@@ -36,7 +35,7 @@ import java.util.UUID
  * 목록·액션 응답은 원본 태스크 제목(title)과 출처 라벨(fromLabel)을 포함한다(#41).
  */
 @WebMvcTest(DebtController::class)
-@Import(SecurityConfig::class, JwtProvider::class, GlobalExceptionHandler::class)
+@Import(SecurityConfig::class, GlobalExceptionHandler::class)
 class DebtControllerWebMvcTest {
 
     @Autowired

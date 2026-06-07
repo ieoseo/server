@@ -1,6 +1,6 @@
 # 테스트 프로파일 (SPRING_PROFILES_ACTIVE=test — build.gradle.kts 에서 지정).
 # 실 DB/Redis 없이 컨텍스트가 로드되도록 DataSource/JPA/Redis auto-config 를 제외한다.
-# 공통(application.yml)이 안 주는 환경값(jwt secret·oauth·sentry)만 테스트 고정값으로 둔다.
+# 공통(application.yml)이 안 주는 환경값(jwks-uri·sentry)만 테스트 고정값으로 둔다.
 spring:
   flyway:
     enabled: false
@@ -11,18 +11,14 @@ spring:
       - org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
       - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
       - org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration
+  # Supabase Auth(Resource Server) — 더미 JWKS URI(테스트는 인증 우회라 실제 fetch 안 함).
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://test.supabase.co/auth/v1/.well-known/jwks.json
 
 ieoseo:
-  # 테스트 전용 더미 JWT 시크릿(실 시크릿 아님). access/refresh TTL 은 공통에서 상속.
-  jwt:
-    secret: test-only-jwt-secret-please-change-32bytes-min
-  oauth:
-    google:
-      client-id: ""
-    apple:
-      client-id: ""
-    kakao:
-      client-id: ""
   sentry:
     dsn: ""
     environment: test

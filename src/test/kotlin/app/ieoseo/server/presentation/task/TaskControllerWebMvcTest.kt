@@ -1,7 +1,6 @@
 package app.ieoseo.server.presentation.task
 
 import app.ieoseo.server.infrastructure.security.AuthPrincipal
-import app.ieoseo.server.infrastructure.security.JwtProvider
 import app.ieoseo.server.infrastructure.security.SecurityConfig
 import app.ieoseo.server.domain.task.Task
 import app.ieoseo.server.domain.task.TaskState
@@ -31,7 +30,7 @@ import java.util.UUID
  * tasks 는 인증 필수(#30) — 미인증 401 과 인증 주체 스코프, 상태 전이 충돌(409) 매핑을 확인한다(서비스는 mock).
  */
 @WebMvcTest(TaskController::class)
-@Import(SecurityConfig::class, JwtProvider::class, GlobalExceptionHandler::class)
+@Import(SecurityConfig::class, GlobalExceptionHandler::class)
 class TaskControllerWebMvcTest {
 
     @Autowired

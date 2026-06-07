@@ -3,7 +3,7 @@ package app.ieoseo.server.infrastructure.security
 import java.util.UUID
 
 /**
- * 인증된 요청 주체. JwtAuthenticationFilter 가 access 토큰에서 추출해
+ * 인증된 요청 주체. SupabaseJwtAuthenticationConverter 가 Supabase JWT(sub/email)에서 추출해
  * SecurityContext 의 Authentication principal 로 주입한다.
  */
 data class AuthPrincipal(

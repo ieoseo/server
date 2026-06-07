@@ -14,7 +14,7 @@ spring:
 server:
   port: 8080
 
-# 이어서 도메인 정책·스케줄·토큰 TTL — 환경 무관 상수.
+# 이어서 도메인 정책·스케줄 — 환경 무관 상수.
 ieoseo:
   max-daily-minutes: 480
   schedule:
@@ -22,8 +22,3 @@ ieoseo:
     recurrence-expansion: "0 10 0 * * *"
     recurrence-horizon-days: 14
     notifications: "0 0 9 * * *"
-  # ※ jwt 는 Supabase Auth(ADR-0014) 전환 시 제거 예정. secret 은 환경별 파일에서 주입.
-  jwt:
-    access-ttl-seconds: 1800
-    refresh-ttl-seconds: 1209600
-    refresh-store: ""

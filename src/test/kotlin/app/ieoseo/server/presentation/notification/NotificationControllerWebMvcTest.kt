@@ -1,7 +1,6 @@
 package app.ieoseo.server.presentation.notification
 
 import app.ieoseo.server.infrastructure.security.AuthPrincipal
-import app.ieoseo.server.infrastructure.security.JwtProvider
 import app.ieoseo.server.infrastructure.security.SecurityConfig
 import app.ieoseo.server.domain.notification.Notification
 import app.ieoseo.server.domain.notification.NotificationType
@@ -34,7 +33,7 @@ import java.util.UUID
  * notifications 는 인증 필수 — 미인증 401, 인증 주체 스코프, unreadCount/읽음 처리 매핑(서비스 mock).
  */
 @WebMvcTest(NotificationController::class)
-@Import(SecurityConfig::class, JwtProvider::class, GlobalExceptionHandler::class)
+@Import(SecurityConfig::class, GlobalExceptionHandler::class)
 class NotificationControllerWebMvcTest {
 
     @Autowired

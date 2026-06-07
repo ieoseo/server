@@ -125,7 +125,6 @@ class DebtGenerationServiceTest {
         id = id,
         email = "u$id@example.com",
         nickname = "n",
-        passwordHash = "\$2a\$10\$testtesttesttesttesttesttesttesttesttesttest", // 합성 BCrypt 형식
     )
 
     private fun task(

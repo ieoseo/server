@@ -114,7 +114,6 @@ class NotificationScheduleServiceTest {
         id = userId,
         email = "u@example.com",
         nickname = "n",
-        passwordHash = "\$2a\$10\$testtesttesttesttesttesttesttesttesttesttest", // 합성 BCrypt 형식
     )
 
     private fun t1Event(id: UUID, date: LocalDate, title: String): Event = Event(

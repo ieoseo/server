@@ -1,10 +1,5 @@
 package app.ieoseo.server.presentation.common
 
-import app.ieoseo.server.infrastructure.oauth.OAuthInvalidException
-import app.ieoseo.server.infrastructure.security.InvalidTokenException
-import app.ieoseo.server.application.auth.EmailLinkedLocalException
-import app.ieoseo.server.application.auth.EmailTakenException
-import app.ieoseo.server.application.auth.InvalidCredentialsException
 import app.ieoseo.server.common.ApiError
 import app.ieoseo.server.common.ApiResponse
 import app.ieoseo.server.common.FieldError
@@ -35,48 +30,6 @@ class GlobalExceptionHandler(
     fun handleNotFound(ex: NotFoundException): ResponseEntity<ApiResponse<Nothing>> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
             ApiResponse.fail(ApiError(code = "NOT_FOUND", message = ex.message ?: "리소스를 찾을 수 없습니다")),
-        )
-
-    /** 이미 가입된 이메일로 회원가입 시도 → 409 EMAIL_TAKEN. 계약: docs/05-API/auth.md. */
-    @ExceptionHandler(EmailTakenException::class)
-    fun handleEmailTaken(ex: EmailTakenException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.CONFLICT).body(
-            ApiResponse.fail(ApiError(code = "EMAIL_TAKEN", message = "이미 가입된 이메일입니다")),
-        )
-
-    /** 로그인 실패(이메일/비밀번호 불일치) → 401 INVALID_CREDENTIALS(원인 비구분). */
-    @ExceptionHandler(InvalidCredentialsException::class)
-    fun handleInvalidCredentials(ex: InvalidCredentialsException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            ApiResponse.fail(
-                ApiError(code = "INVALID_CREDENTIALS", message = "이메일 또는 비밀번호가 올바르지 않습니다"),
-            ),
-        )
-
-    /** 소셜 토큰 검증 실패(서명·iss·aud·exp·provider API) → 401 OAUTH_INVALID. */
-    @ExceptionHandler(OAuthInvalidException::class)
-    fun handleOAuthInvalid(ex: OAuthInvalidException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            ApiResponse.fail(ApiError(code = "OAUTH_INVALID", message = "소셜 인증에 실패했습니다")),
-        )
-
-    /** 소셜 이메일이 이미 LOCAL 계정으로 존재(연결 거부) → 409 EMAIL_LINKED_LOCAL. */
-    @ExceptionHandler(EmailLinkedLocalException::class)
-    fun handleEmailLinkedLocal(ex: EmailLinkedLocalException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.CONFLICT).body(
-            ApiResponse.fail(
-                ApiError(
-                    code = "EMAIL_LINKED_LOCAL",
-                    message = "이미 이메일/비밀번호로 가입된 계정입니다. 이메일 로그인을 이용해 주세요",
-                ),
-            ),
-        )
-
-    /** refresh 토큰 만료·폐기·재사용·위조 → 401 REFRESH_INVALID. */
-    @ExceptionHandler(InvalidTokenException::class)
-    fun handleInvalidToken(ex: InvalidTokenException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            ApiResponse.fail(ApiError(code = "REFRESH_INVALID", message = "토큰이 유효하지 않습니다")),
         )
 
     @ExceptionHandler(MethodArgumentNotValidException::class)

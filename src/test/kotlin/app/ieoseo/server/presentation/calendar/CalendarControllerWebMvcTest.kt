@@ -7,7 +7,6 @@ import app.ieoseo.server.domain.calendar.CalendarProvider
 import app.ieoseo.server.domain.calendar.ConnectionStatus
 import app.ieoseo.server.domain.calendar.ExternalEvent
 import app.ieoseo.server.infrastructure.security.AuthPrincipal
-import app.ieoseo.server.infrastructure.security.JwtProvider
 import app.ieoseo.server.infrastructure.security.SecurityConfig
 import app.ieoseo.server.presentation.common.GlobalExceptionHandler
 import org.junit.jupiter.api.Test
@@ -35,7 +34,7 @@ import java.util.UUID
  * 캘린더 엔드포인트는 인증 필수 — 미인증 401 과 인증 주체 스코프, envelope, 토큰 비노출을 검증한다.
  */
 @WebMvcTest(CalendarController::class)
-@Import(SecurityConfig::class, JwtProvider::class, GlobalExceptionHandler::class)
+@Import(SecurityConfig::class, GlobalExceptionHandler::class)
 class CalendarControllerWebMvcTest {
 
     @Autowired

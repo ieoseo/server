@@ -1,7 +1,6 @@
 package app.ieoseo.server.presentation.event
 
 import app.ieoseo.server.infrastructure.security.AuthPrincipal
-import app.ieoseo.server.infrastructure.security.JwtProvider
 import app.ieoseo.server.infrastructure.security.SecurityConfig
 import app.ieoseo.server.common.NotFoundException
 import app.ieoseo.server.domain.event.DDayResult
@@ -37,7 +36,7 @@ import java.util.UUID
  * 인증 주체는 [authentication] postprocessor 로 [AuthPrincipal] 을 주입한다(서비스는 mock).
  */
 @WebMvcTest(EventController::class)
-@Import(SecurityConfig::class, JwtProvider::class, GlobalExceptionHandler::class)
+@Import(SecurityConfig::class, GlobalExceptionHandler::class)
 class EventControllerWebMvcTest {
 
     @Autowired

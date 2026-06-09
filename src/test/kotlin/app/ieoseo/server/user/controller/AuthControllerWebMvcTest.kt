@@ -53,6 +53,10 @@ class AuthControllerWebMvcTest {
     private fun asUser(): Authentication =
         UsernamePasswordAuthenticationToken(AuthPrincipal(userId, "jiwoo@ieoseo.app"), null, emptyList())
 
+    /** 이메일 미제공 provider(Kakao 등): email=null, name=표시 이름. */
+    private fun asKakaoUser(): Authentication =
+        UsernamePasswordAuthenticationToken(AuthPrincipal(userId, email = null, name = "카카오지우"), null, emptyList())
+
     private fun user(nickname: String = "지우"): User =
         User(id = userId, email = "jiwoo@ieoseo.app", nickname = nickname)
 
@@ -93,6 +97,18 @@ class AuthControllerWebMvcTest {
             .andExpect(jsonPath("$.data.id").value(userId.toString()))
             .andExpect(jsonPath("$.data.email").value("jiwoo@ieoseo.app"))
             .andExpect(jsonPath("$.data.nickname").value("지우"))
+    }
+
+    @Test
+    fun `me 는 이메일 없는 사용자면 email 을 null 로 닉네임은 표시 이름으로 반환한다`() {
+        // Kakao 등 이메일 미제공 provider: AuthPrincipal.name 으로 provisioning 된 닉네임을 노출
+        `when`(authService.me(userId)).thenReturn(User(id = userId, email = null, nickname = "카카오지우"))
+
+        mockMvc.perform(get("/api/v1/auth/me").with(authentication(asKakaoUser())))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.id").value(userId.toString()))
+            .andExpect(jsonPath("$.data.email").value(null as String?))
+            .andExpect(jsonPath("$.data.nickname").value("카카오지우"))
     }
 
     @Test

@@ -1,23 +1,15 @@
+# 로컬 개발 프로파일 (./gradlew bootRun → spring.profiles.active=local).
+# 보안/환경값은 server/.env.local 에서 주입한다(파일 없으면 OS 환경변수). 하드코딩 없음.
+# 최초: cp .env.example .env.local 후 값 채움. 값 예시는 docs/가이드/환경변수.md 참조.
 spring:
+  config:
+    import: "optional:file:.env.local[.properties]"
   datasource:
-    url: jdbc:postgresql://localhost:5432/ieoseo
-    username: ieoseo
-    password: ieoseo
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: ""
-  # Supabase Auth(Resource Server) — 로컬 placeholder 공개값. 실제 프로젝트로 교체(ADR-0014).
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: https://YOUR-PROJECT.supabase.co/auth/v1/.well-known/jwks.json
-
-ieoseo:
-  sentry:
-    dsn: ""
-    environment: local
-    release: ""
-    traces-sample-rate: 0.0
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}

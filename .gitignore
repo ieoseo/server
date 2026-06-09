@@ -39,6 +39,9 @@ out/
 ### Kotlin ###
 .kotlin
 
+# --- 로컬 더미 시드 (커밋 금지) ---
+seed-dummy-local.sql
+
 # --- 시크릿/키 (daykit 루트 .gitignore 에서 병합) ---
 .env
 .env.*

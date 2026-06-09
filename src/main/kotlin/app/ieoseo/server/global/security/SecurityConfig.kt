@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter
@@ -26,7 +27,14 @@ class SecurityConfig {
     @Bean
     fun jwtDecoder(
         @Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") jwkSetUri: String,
-    ): JwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build()
+    ): JwtDecoder =
+        // Supabase 비대칭 서명 키는 ES256(ECC P-256)이다(JWKS 의 alg=ES256). NimbusJwtDecoder
+        // 기본 기대 알고리즘은 RS256 이라 명시하지 않으면 ES256 토큰을 거부(401)한다.
+        // 레거시 호환 위해 RS256 도 함께 허용한다.
+        NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+            .jwsAlgorithm(SignatureAlgorithm.ES256)
+            .jwsAlgorithm(SignatureAlgorithm.RS256)
+            .build()
 
     @Bean
     fun supabaseJwtAuthenticationConverter(): SupabaseJwtAuthenticationConverter = SupabaseJwtAuthenticationConverter()

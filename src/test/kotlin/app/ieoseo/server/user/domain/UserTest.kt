@@ -5,6 +5,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -28,7 +29,15 @@ class UserTest {
     }
 
     @Test
-    fun `email 은 비어 있을 수 없다`() {
+    fun `email 은 null 이면 허용된다`() {
+        val user = User(id = UUID.randomUUID(), email = null, nickname = "지우")
+
+        assertNull(user.email)
+        assertTrue(user.isActive)
+    }
+
+    @Test
+    fun `email 은 null 이 아니면 비어 있을 수 없다`() {
         assertFailsWith<IllegalArgumentException> {
             User(id = UUID.randomUUID(), email = "  ", nickname = "지우")
         }

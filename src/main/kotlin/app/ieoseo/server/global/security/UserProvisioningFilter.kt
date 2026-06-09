@@ -20,12 +20,17 @@ class UserProvisioningFilter(
         val principal = SecurityContextHolder.getContext().authentication?.principal as? AuthPrincipal
         val repo = userRepositoryProvider.getIfAvailable()
         if (principal != null && repo != null && !repo.existsById(principal.userId)) {
-            val email = principal.email.ifBlank { "${principal.userId}@users.ieoseo.local" }
-            repo.save(User(id = principal.userId, email = email, nickname = defaultNickname(principal.email)))
+            // 이메일은 nullable(미제공 provider 지원, ADR-0017) — placeholder 합성하지 않는다.
+            repo.save(User(id = principal.userId, email = principal.email, nickname = defaultNickname(principal)))
         }
         filterChain.doFilter(request, response)
     }
 
-    private fun defaultNickname(email: String): String =
-        email.substringBefore('@').take(20).ifBlank { "user" }
+    /** 닉네임 우선순위: provider 표시 이름 → 이메일 local-part → "user". 모두 20자 이내. */
+    private fun defaultNickname(principal: AuthPrincipal): String =
+        principal.name?.trim()?.take(NICKNAME_MAX_LENGTH)?.ifBlank { null }
+            ?: principal.email?.substringBefore('@')?.take(NICKNAME_MAX_LENGTH)?.ifBlank { null }
+            ?: "user"
+
+    private companion object { const val NICKNAME_MAX_LENGTH = 20 }
 }

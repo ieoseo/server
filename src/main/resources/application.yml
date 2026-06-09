@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: server
+  # 보안/환경값은 프로파일별 env 파일로 주입한다: local=.env.local, prod=.env.prod
+  # (각 application-{profile}.yml 의 spring.config.import). CI/운영은 OS 환경변수가 우선.
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  # Supabase Auth(Resource Server) — JWKS 로 JWT 검증(ADR-0014). 값은 ${SUPABASE_JWKS_URI} 로 주입한다.
+  # local 은 .env.local, prod 는 .env.prod/OS 환경변수. test 는 application-test.yml 의 더미가 덮어쓴다.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${SUPABASE_JWKS_URI:}
+
+server:
+  port: 8080
+
+# 이어서 도메인 정책·스케줄 — 환경 무관 상수.
+ieoseo:
+  max-daily-minutes: 480
+  schedule:
+    debt-generation: "0 5 0 * * *"
+    recurrence-expansion: "0 10 0 * * *"
+    recurrence-horizon-days: 14
+    notifications: "0 0 9 * * *"

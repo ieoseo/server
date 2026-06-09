@@ -1,13 +1,13 @@
 package app.ieoseo.server
 
-import app.ieoseo.server.infrastructure.persistence.auth.UserRepository
-import app.ieoseo.server.infrastructure.persistence.calendar.CalendarConnectionRepository
-import app.ieoseo.server.infrastructure.persistence.calendar.ExternalEventRepository
-import app.ieoseo.server.infrastructure.persistence.notification.NotificationRepository
-import app.ieoseo.server.infrastructure.persistence.event.EventRepository
-import app.ieoseo.server.infrastructure.persistence.settings.UserSettingsRepository
-import app.ieoseo.server.infrastructure.persistence.task.TaskRepository
-import app.ieoseo.server.infrastructure.persistence.debt.TimeDebtRepository
+import app.ieoseo.server.user.repository.UserRepository
+import app.ieoseo.server.calendar.repository.CalendarConnectionRepository
+import app.ieoseo.server.calendar.repository.ExternalEventRepository
+import app.ieoseo.server.notification.repository.NotificationRepository
+import app.ieoseo.server.event.repository.EventRepository
+import app.ieoseo.server.settings.repository.UserSettingsRepository
+import app.ieoseo.server.task.repository.TaskRepository
+import app.ieoseo.server.debt.repository.TimeDebtRepository
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration

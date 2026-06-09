@@ -1,0 +1,22 @@
+# 배포(운영) 프로파일 (SPRING_PROFILES_ACTIVE=prod — 컨테이너 기본).
+# 실제 값은 이 파일에 두지 않는다 — server/.env.prod 또는 배포 OS 환경변수로 주입한다.
+# 인증 jwk-set-uri 는 공통(application.yml)이 ${SUPABASE_JWKS_URI} 를 읽는다 — prod 는 필수.
+spring:
+  config:
+    import: "optional:file:.env.prod[.properties]"
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+
+ieoseo:
+  sentry:
+    dsn: ${SENTRY_DSN}
+    environment: ${SENTRY_ENVIRONMENT}
+    release: ${SENTRY_RELEASE}
+    traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE}

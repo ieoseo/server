@@ -26,12 +26,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    // Supabase Auth(Resource Server) — Supabase JWT 를 JWKS 로 검증(ADR-0014). 자체 토큰 발급 없음.
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
-    // JWT(access/refresh) 서명·검증. api 는 컴파일, impl/jackson 은 런타임.
-    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
     // 관측성(Sentry) 코어 SDK. auto-config 스타터 대신 코어를 직접 init(ADR-0011, SB4 호환).
     implementation("io.sentry:sentry:8.16.0")
     // DB 마이그레이션(Flyway, ADR-0007). 부팅 시 db/migration 의 V1~V5 를 PostgreSQL 에 적용한다.
@@ -66,6 +64,13 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // 테스트는 test 프로파일 → src/test/resources/application-test.yml 로드(슬라이스용 auto-config 제외).
+    systemProperty("spring.profiles.active", "test")
+}
+
+// 로컬 실행은 local 프로파일 → application-local.yml(.env import·localhost 기본값).
+tasks.named<JavaExec>("bootRun") {
+    systemProperty("spring.profiles.active", "local")
 }
 
 // 컨테이너 빌드 시 실행 가능한 bootJar 하나만 남기도록 plain jar 비활성(Dockerfile COPY 모호성 제거).

@@ -17,9 +17,10 @@ RUN addgroup --system app && adduser --system --ingroup app app
 COPY --from=build /app/build/libs/*.jar app.jar
 USER app
 
-# 앱 포트(application.yaml 의 SERVER_PORT 기본 8080). Azure App Service 는 WEBSITES_PORT=8080 설정.
+# 앱 포트 8080. 운영 프로파일(prod) 활성 — application-prod.yml 의 값은 컨테이너 환경변수(${ENV})로 주입.
 EXPOSE 8080
 ENV SERVER_PORT=8080
+ENV SPRING_PROFILES_ACTIVE=prod
 
 # 헬스체크(컨테이너 레벨) — /health/check 는 공개(permitAll).
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \

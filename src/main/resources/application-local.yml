@@ -13,3 +13,10 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
+
+# 로컬은 진단을 위해 상세 로깅(인증·외부연동·요청 흐름).
+logging:
+  level:
+    app.ieoseo.server: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG

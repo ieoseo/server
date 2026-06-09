@@ -23,6 +23,15 @@ spring:
 server:
   port: 8080
 
+# 로그 가시성(프로파일별 레벨은 application-{local,prod}.yml 에서 덮어쓴다).
+# 운영/로컬에서 요청·인증·외부연동 흐름을 추적하기 위한 기본 설정.
+logging:
+  level:
+    root: INFO
+    app.ieoseo.server: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{32} - %msg%n"
+
 # 이어서 도메인 정책·스케줄 — 환경 무관 상수.
 ieoseo:
   max-daily-minutes: 480

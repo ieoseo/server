@@ -52,17 +52,21 @@ class GlobalExceptionHandler(
         )
 
     @ExceptionHandler(IllegalArgumentException::class)
-    fun handleIllegalArgument(ex: IllegalArgumentException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+    fun handleIllegalArgument(ex: IllegalArgumentException): ResponseEntity<ApiResponse<Nothing>> {
+        log.warn("잘못된 요청(400): {}", ex.message)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
             ApiResponse.fail(ApiError(code = "BAD_REQUEST", message = ex.message ?: "잘못된 요청입니다")),
         )
+    }
 
     /** 상태 전이 충돌 등 도메인 상태 위반(예: 불법 상태 전이) → 409 CONFLICT. */
     @ExceptionHandler(IllegalStateException::class)
-    fun handleIllegalState(ex: IllegalStateException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.CONFLICT).body(
+    fun handleIllegalState(ex: IllegalStateException): ResponseEntity<ApiResponse<Nothing>> {
+        log.warn("상태 충돌(409): {}", ex.message)
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
             ApiResponse.fail(ApiError(code = "CONFLICT", message = ex.message ?: "현재 상태에서 처리할 수 없습니다")),
         )
+    }
 
     /**
      * 위에서 매핑되지 않은 런타임 예외(NPE·DB 오류 등) → 500 INTERNAL_ERROR.

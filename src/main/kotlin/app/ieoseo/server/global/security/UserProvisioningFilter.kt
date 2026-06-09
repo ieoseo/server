@@ -19,9 +19,16 @@ class UserProvisioningFilter(
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
         val principal = SecurityContextHolder.getContext().authentication?.principal as? AuthPrincipal
         val repo = userRepositoryProvider.getIfAvailable()
-        if (principal != null && repo != null && !repo.existsById(principal.userId)) {
-            // 이메일은 nullable(미제공 provider 지원, ADR-0017) — placeholder 합성하지 않는다.
-            repo.save(User(id = principal.userId, email = principal.email, nickname = defaultNickname(principal)))
+        if (principal != null && repo != null) {
+            val user = repo.findById(principal.userId).orElse(null)
+            if (user == null) {
+                // 이메일은 nullable(미제공 provider 지원, ADR-0017) — placeholder 합성하지 않는다.
+                repo.save(User(id = principal.userId, email = principal.email, nickname = defaultNickname(principal)))
+            } else if (!user.isActive) {
+                // 탈퇴 사용자는 토큰 만료 전까지 유효한 Supabase JWT 로 접근할 수 있으므로 명시 차단한다.
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "비활성화된 계정입니다")
+                return
+            }
         }
         filterChain.doFilter(request, response)
     }

@@ -76,6 +76,8 @@ class SecurityConfig {
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/health/**", "/actuator/health", "/api/v1/health").permitAll()
+                    // Google Calendar OAuth 콜백은 브라우저 리다이렉트라 공개(사용자 식별은 state, 이슈 #9).
+                    .requestMatchers("/api/v1/calendar/oauth/**").permitAll()
                     .anyRequest().authenticated()
             }
             .oauth2ResourceServer { rs ->

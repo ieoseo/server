@@ -1,9 +1,4 @@
-# 이어서 로컬 개발용 — PostgreSQL 만.
-# 값은 Spring 과 같은 파일(.env.local)에서 가져온다(단일 소스). docker compose 는 기본 .env 만
-# 자동으로 읽으므로 --env-file 로 .env.local 을 명시해야 한다.
-# 사용: cd server && docker compose --env-file .env.local up -d db
-# 종료: docker compose --env-file .env.local down  (데이터 삭제까지: ... down -v)
-# 값이 없으면 기본값으로 조용히 뜨지 않고 에러로 알린다(${VAR:?...}).
+# 이어서 로컬 개발용 PostgreSQL. 실행법·설명: ../docs/가이드/서버-로컬-테스트.md
 services:
   db:
     image: postgres:16-alpine

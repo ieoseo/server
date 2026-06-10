@@ -11,8 +11,6 @@ import app.ieoseo.server.debt.repository.TimeDebtRepository
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
-import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
-import org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration
 import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
@@ -21,7 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 /**
  * 컨텍스트 로드 스모크 테스트.
  *
- * 실 DB/Redis 없이 부팅되도록 DataSource/JPA/Redis auto-config 를 제외하고
+ * 실 DB 없이 부팅되도록 DataSource/JPA auto-config 를 제외하고
  * (testcontainers 미도입 — 이슈 #6 지시), JPA 리포지토리는 mock 빈으로 대체한다.
  * web/service 계층 빈 배선만 검증한다.
  */
@@ -31,8 +29,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
         DataSourceAutoConfiguration::class,
         HibernateJpaAutoConfiguration::class,
         DataJpaRepositoriesAutoConfiguration::class,
-        DataRedisAutoConfiguration::class,
-        DataRedisRepositoriesAutoConfiguration::class,
     ],
 )
 class ServerApplicationTests {

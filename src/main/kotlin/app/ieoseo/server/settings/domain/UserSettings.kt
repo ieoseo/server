@@ -108,6 +108,11 @@ class UserSettings(
     companion object {
         const val DEFAULT_AUTO_CARRY = true
         const val DEFAULT_DAY_DEADLINE_HOUR = 0
+
+        /**
+         * 하루 최대 예약 시간(분) 기본값. 단일 출처(SSOT)는 application.yml(ieoseo.max-daily-minutes)/FRD.
+         * 같은 480 이 db/migration/V4__user_settings.sql(DEFAULT 480) 에도 있으니 함께 맞춘다.
+         */
         const val DEFAULT_MAX_DAILY_MINUTES = 480
         const val DEFAULT_POMODORO_FOCUS = 25
         const val DEFAULT_POMODORO_SHORT_BREAK = 5

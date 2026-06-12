@@ -18,7 +18,7 @@ import java.time.format.DateTimeParseException
 /**
  * Google Calendar API events.list 원시 호출 추상화 (이슈 #59).
  *
- * HTTP 실호출을 이 인터페이스 뒤로 둔다(oauth KakaoUserClient 패턴). 테스트는 가짜 주입.
+ * HTTP 실호출을 이 인터페이스 뒤로 둔다(fun interface 라 테스트는 가짜 람다 주입).
  * 호출 실패(비2xx·전송 오류)는 [CalendarSyncException] 으로 던진다. 반환은 응답 JSON 본문.
  */
 fun interface GoogleEventsApi {

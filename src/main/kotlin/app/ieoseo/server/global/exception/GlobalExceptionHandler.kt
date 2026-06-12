@@ -4,7 +4,6 @@ import app.ieoseo.server.global.common.ApiError
 import app.ieoseo.server.global.common.ApiResponse
 import app.ieoseo.server.global.common.FieldError
 import app.ieoseo.server.global.exception.NotFoundException
-import app.ieoseo.server.global.observability.SentryReporter
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,13 +15,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 /**
  * 예외를 공통 envelope 오류로 매핑한다. 계약: `docs/05-API/README.md` 오류 형식.
  *
- * [sentryReporter] 는 미처리(5xx) 예외만 외부 관측성으로 보고한다(ADR-0011). 슬라이스
- * 테스트(@WebMvcTest)처럼 빈이 없는 컨텍스트에서는 null 로 주입돼 보고를 건너뛴다.
+ * 미처리(5xx) 예외는 ERROR 로그로만 남긴다(외부 관측성 미사용).
  */
 @RestControllerAdvice
-class GlobalExceptionHandler(
-    private val sentryReporter: SentryReporter? = null,
-) {
+class GlobalExceptionHandler {
 
     private val log = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
@@ -72,12 +68,11 @@ class GlobalExceptionHandler(
      * 위에서 매핑되지 않은 런타임 예외(NPE·DB 오류 등) → 500 INTERNAL_ERROR.
      *
      * 4xx 도메인 예외는 각자 전용 핸들러가 처리하므로 여기 도달하지 않는다. 즉 이 핸들러는
-     * "진짜 예상 못한" 서버 오류만 받아 Sentry 로 캡처한다(ADR-0011). 사용자에게는 내부
-     * 상세를 노출하지 않는 일반 메시지만 돌려준다.
+     * "진짜 예상 못한" 서버 오류만 받아 ERROR 로그로 남긴다. 사용자에게는 내부 상세를
+     * 노출하지 않는 일반 메시지만 돌려준다.
      */
     @ExceptionHandler(RuntimeException::class)
     fun handleUnexpected(ex: RuntimeException): ResponseEntity<ApiResponse<Nothing>> {
-        sentryReporter?.captureException(ex)
         log.error("처리되지 않은 예외", ex)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
             ApiResponse.fail(ApiError(code = "INTERNAL_ERROR", message = "서버 오류가 발생했습니다")),

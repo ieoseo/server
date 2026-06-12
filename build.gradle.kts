@@ -29,8 +29,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
-    // 관측성(Sentry) 코어 SDK. auto-config 스타터 대신 코어를 직접 init(ADR-0011, SB4 호환).
-    implementation("io.sentry:sentry:8.16.0")
     // DB 마이그레이션(Flyway, ADR-0007). 부팅 시 db/migration 의 V1~V5 를 PostgreSQL 에 적용한다.
     // (ddl-auto: validate 전제) 버전은 Spring Boot BOM 이 관리한다.
     // Spring Boot 4 는 자동설정이 모듈로 분리됨 → spring-boot-flyway 가 있어야 부팅 시 자동 마이그레이션이 동작한다.

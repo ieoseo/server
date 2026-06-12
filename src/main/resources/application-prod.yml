@@ -9,13 +9,6 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
-ieoseo:
-  sentry:
-    dsn: ${SENTRY_DSN}
-    environment: ${SENTRY_ENVIRONMENT}
-    release: ${SENTRY_RELEASE}
-    traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE}
-
 # 운영 로그(Azure Log Stream/콘솔). 도메인은 INFO, 보안/요청은 과다 로그 방지로 WARN.
 # LOG_LEVEL_APP 환경변수로 일시 상향(예: DEBUG) 가능.
 logging:

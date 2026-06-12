@@ -78,6 +78,8 @@ class SecurityConfig {
                     .requestMatchers("/health/**", "/actuator/health", "/api/v1/health").permitAll()
                     // Google Calendar OAuth 콜백은 브라우저 리다이렉트라 공개(사용자 식별은 state, 이슈 #9).
                     .requestMatchers("/api/v1/calendar/oauth/**").permitAll()
+                    // Swagger/OpenAPI 문서는 공개(prod 는 springdoc.*.enabled=false 로 비활성).
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                     .anyRequest().authenticated()
             }
             .oauth2ResourceServer { rs ->

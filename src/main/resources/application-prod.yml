@@ -9,6 +9,13 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
+# API 문서(OpenAPI/Swagger UI)는 운영에서 비활성 — 공개 엔드포인트 정보노출 최소화(local 에선 활성).
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 # 운영 로그(Azure Log Stream/콘솔). 도메인은 INFO, 보안/요청은 과다 로그 방지로 WARN.
 # LOG_LEVEL_APP 환경변수로 일시 상향(예: DEBUG) 가능.
 logging:

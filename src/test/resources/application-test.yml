@@ -1,6 +1,6 @@
 # 테스트 프로파일 (SPRING_PROFILES_ACTIVE=test — build.gradle.kts 에서 지정).
 # 실 DB/Redis 없이 컨텍스트가 로드되도록 DataSource/JPA/Redis auto-config 를 제외한다.
-# 공통(application.yml)이 안 주는 환경값(jwks-uri·sentry)만 테스트 고정값으로 둔다.
+# 공통(application.yml)이 안 주는 환경값(jwks-uri)만 테스트 고정값으로 둔다.
 spring:
   flyway:
     enabled: false
@@ -17,10 +17,3 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: https://test.supabase.co/auth/v1/.well-known/jwks.json
-
-ieoseo:
-  sentry:
-    dsn: ""
-    environment: test
-    release: ""
-    traces-sample-rate: 0.0

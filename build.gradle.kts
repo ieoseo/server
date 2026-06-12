@@ -27,6 +27,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     // Supabase Auth(Resource Server) — Supabase JWT 를 JWKS 로 검증(ADR-0014). 자체 토큰 발급 없음.
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    // API 문서(OpenAPI/Swagger UI). 3.0.x 가 Spring Boot 4 / Jackson 3 대응 라인(2.x 는 Boot 3 전용).
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
     // DB 마이그레이션(Flyway, ADR-0007). 부팅 시 db/migration 의 V1~V5 를 PostgreSQL 에 적용한다.

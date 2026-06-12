@@ -1,7 +1,5 @@
-# 이어서 server 컨테이너 이미지 (멀티스테이지).
-# 빌드: docker build -t ieoseo-server ./server
-# 실행: docker run -p 8080:8080 --env-file server/.env ieoseo-server
-# Azure App Service(컨테이너) 배포 대상 — 자세한 절차: docs/03-개발프로세스/배포-Azure.md
+# 이어서 server 컨테이너 이미지 (멀티스테이지). 배포 절차: docs 가이드/azure/배포.md (Azure Container Apps)
+# 로컬: docker build -t ieoseo-server . && docker run -p 8080:8080 --env-file .env.local ieoseo-server
 
 # ── 1) 빌드 스테이지 — Gradle wrapper 로 부트 JAR 생성 ──
 FROM eclipse-temurin:21-jdk AS build

@@ -3,6 +3,7 @@ package app.ieoseo.server.calendar.client
 import app.ieoseo.server.calendar.domain.CalendarConnection
 import app.ieoseo.server.calendar.domain.CalendarProvider
 import app.ieoseo.server.calendar.domain.ExternalEvent
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
@@ -17,7 +18,7 @@ import java.time.OffsetDateTime
 /**
  * Notion API 데이터베이스 query 원시 호출 추상화 (이슈 #59).
  *
- * HTTP 실호출을 이 인터페이스 뒤로 둔다(oauth KakaoUserClient 패턴). 테스트는 가짜 주입.
+ * HTTP 실호출을 이 인터페이스 뒤로 둔다(fun interface 라 테스트는 가짜 람다 주입).
  * 호출 실패(비2xx·전송 오류)는 [CalendarSyncException] 으로 던진다. 반환은 응답 JSON 본문.
  *
  * 가져올 데이터베이스 id 는 연결 등록 시 [CalendarConnection.refreshToken] 에 보관한다
@@ -32,9 +33,16 @@ fun interface NotionQueryApi {
  * 실제 Notion 데이터베이스 query 호출 — integration 토큰으로 `databases/{id}/query` 를 POST 한다.
  *
  * `Date` 속성에 [from]~[to] 필터를 적용한다. `Notion-Version` 헤더 필수. 토큰/키는 연결에서 주입.
+ *
+ * `Notion-Version` 은 날짜 고정 API 버전이라 시간이 지나면 갱신해야 한다. 하드코딩 대신
+ * `ieoseo.calendar.notion.api-version`(application.yml, 기본 2022-06-28) 으로 외부화한다.
+ * [baseUri] 도 테스트에서 로컬 스텁 서버로 덮어쓸 수 있도록 생성자 인자로 둔다.
  */
 @Component
 class HttpNotionQueryApi(
+    @Value("\${ieoseo.calendar.notion.api-version:$DEFAULT_NOTION_VERSION}")
+    private val notionVersion: String = DEFAULT_NOTION_VERSION,
+    private val baseUri: String = DEFAULT_BASE_URI,
     private val httpClient: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
         .build(),
@@ -49,9 +57,9 @@ class HttpNotionQueryApi(
         """.trimIndent()
         return runCatching {
             val request = HttpRequest.newBuilder()
-                .uri(URI.create("$BASE_URI/databases/$databaseId/query"))
+                .uri(URI.create("$baseUri/databases/$databaseId/query"))
                 .header("Authorization", "Bearer $token")
-                .header("Notion-Version", NOTION_VERSION)
+                .header("Notion-Version", notionVersion)
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
                 .POST(HttpRequest.BodyPublishers.ofString(payload))
@@ -68,8 +76,13 @@ class HttpNotionQueryApi(
     }
 
     private companion object {
-        const val BASE_URI = "https://api.notion.com/v1"
-        const val NOTION_VERSION = "2022-06-28"
+        const val DEFAULT_BASE_URI = "https://api.notion.com/v1"
+
+        /**
+         * Notion API 버전 기본값(미설정 시 fallback). 실제 값은 `ieoseo.calendar.notion.api-version`
+         * (application.yml) 으로 주입한다. 둘은 동일 기본값을 유지해야 한다.
+         */
+        const val DEFAULT_NOTION_VERSION = "2022-06-28"
         const val REQUEST_TIMEOUT_SECONDS = 5L
         const val PAGE_SIZE = 100
     }

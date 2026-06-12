@@ -12,8 +12,8 @@ import java.util.concurrent.ConcurrentHashMap
  * OAuth state(CSRF 방지) 저장소(이슈 #9). connect 시작 시 사용자별 일회용 state 를 발급하고,
  * 콜백에서 소비(consume)해 어떤 사용자의 연동인지 안전하게 식별한다.
  *
- * 인메모리·TTL(기본 10분)·단일 사용(consume 시 제거). 단일 인스턴스(Azure App Service) 전제이며,
- * 재시작 시 진행 중 state 는 소실(사용자가 재시도) — 운영 다중 인스턴스 전환 시 Redis 로 교체.
+ * 인메모리·TTL(기본 10분)·단일 사용(consume 시 제거). 단일 인스턴스(Azure Container Apps, minReplicas=1,
+ * ADR-0018) 전제이며, 재시작 시 진행 중 state 는 소실(사용자가 재시도). 다중 인스턴스로 확장하면 Redis 로 교체.
  */
 @Component
 class OAuthStateStore(

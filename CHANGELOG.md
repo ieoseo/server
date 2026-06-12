@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0](https://github.com/ieoseo/server/compare/ieoseo-server-v0.0.1...ieoseo-server-v0.1.0) (2026-06-12)
+
+
+### Features
+
+* API 문서(Swagger/OpenAPI) 추가 ([#22](https://github.com/ieoseo/server/issues/22)) ([32d090c](https://github.com/ieoseo/server/commit/32d090c8634992702156fb61694e0fe405bcf69b)), closes [#19](https://github.com/ieoseo/server/issues/19)
+* 서버 주도 Google 캘린더 OAuth (Phase A) ([#7](https://github.com/ieoseo/server/issues/7)) ([d5f49d4](https://github.com/ieoseo/server/commit/d5f49d45c4b4a12bfaf27ca306ccdc0c20a46e4d)), closes [#9](https://github.com/ieoseo/server/issues/9)
+
 ## [1.1.0](https://github.com/pkdee/daykit/compare/server-v1.0.0...server-v1.1.0) (2026-06-05)
 
 

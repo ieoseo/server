@@ -81,6 +81,19 @@ class TimeDebtRepositoryDataJpaTest {
         assertEquals(1, repository.findAllByUserIdAndTaskId(owner, taskId).size)
     }
 
+    @Test
+    fun `소유자의 모든 부채 taskId 를 일괄 조회한다(N+1 제거용)`() {
+        val taskA = UUID.randomUUID()
+        val taskB = UUID.randomUUID()
+        repository.save(debt(status = DebtStatus.PENDING, origin = monday, taskId = taskA))
+        repository.save(debt(status = DebtStatus.PENDING, origin = monday, taskId = taskB))
+        repository.save(debt(status = DebtStatus.PENDING, origin = monday, userId = other)) // 타인 제외
+
+        val taskIds = repository.findTaskIdsByUserId(owner)
+
+        assertEquals(setOf(taskA, taskB), taskIds.toSet())
+    }
+
     private fun debt(
         status: DebtStatus,
         origin: LocalDate,

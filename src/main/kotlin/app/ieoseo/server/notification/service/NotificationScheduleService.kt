@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Pageable
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.util.UUID
 
@@ -50,12 +49,20 @@ class NotificationScheduleService(
         log.info("NotificationScheduleService: D-Day/스트릭 알림 잡을 실행했습니다")
     }
 
-    /** [today] 기준 D-Day 임박 알림과 스트릭 알림을 트리거한다. */
-    @Transactional
+    /**
+     * [today] 기준 D-Day 임박 알림과 스트릭 알림을 트리거한다.
+     *
+     * 트랜잭션 격리(B-2): 잡 전체를 한 트랜잭션으로 묶지 않는다([NotificationService] 의 각 `*IfAbsent`
+     * 가 자체 트랜잭션). 사용자별 try/catch 로, 한 사용자 처리 실패가 나머지를 막지 않는다.
+     */
     fun run(today: LocalDate) {
         for (user in userRepository.findAll()) {
-            notifyDday(user.id, today)
-            notifyStreak(user.id, today)
+            try {
+                notifyDday(user.id, today)
+                notifyStreak(user.id, today)
+            } catch (e: Exception) {
+                log.error("알림 처리 실패(user={}) — 다음 사용자로 계속", user.id, e)
+            }
         }
     }
 

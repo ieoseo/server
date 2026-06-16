@@ -5,6 +5,8 @@ import app.ieoseo.server.debt.domain.TimeDebt
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import java.time.LocalDate
 import java.util.Optional
 import java.util.UUID
@@ -36,4 +38,11 @@ interface TimeDebtRepository : JpaRepository<TimeDebt, UUID> {
     fun findAllByUserIdAndOriginDateBetween(userId: UUID, from: LocalDate, to: LocalDate): List<TimeDebt>
 
     fun findAllByUserIdAndTaskId(userId: UUID, taskId: UUID): List<TimeDebt>
+
+    /**
+     * 소유자의 모든 부채가 가리키는 `taskId` 목록(중복 부채 방지용 일괄 조회).
+     * 부채 생성 잡이 태스크마다 존재 여부를 조회하던 N+1 을 1쿼리로 대체한다.
+     */
+    @Query("select d.taskId from TimeDebt d where d.userId = :userId")
+    fun findTaskIdsByUserId(@Param("userId") userId: UUID): List<UUID>
 }

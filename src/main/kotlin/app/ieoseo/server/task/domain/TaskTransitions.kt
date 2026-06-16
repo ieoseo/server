@@ -11,7 +11,7 @@ package app.ieoseo.server.task.domain
  * ```
  * 활성/이월 상태(TODAY/MISSED/CARRIED/OVERDUE)에서는 사용자 행동으로 직접 이월(CARRIED)
  * 또는 탕감(ABANDONED)이 일어날 수 있어 그 전이도 허용한다.
- * DONE/ABANDONED 는 종료 상태로 더 이상 전이하지 않는다.
+ * DONE 은 완료 취소(reopen)로 TODAY 로 되돌릴 수 있다(체크 토글 UX). ABANDONED 는 종료 상태.
  */
 object TaskTransitions {
 
@@ -21,7 +21,8 @@ object TaskTransitions {
         TaskState.MISSED to setOf(TaskState.CARRIED, TaskState.ABANDONED),
         TaskState.CARRIED to setOf(TaskState.DONE, TaskState.OVERDUE, TaskState.ABANDONED),
         TaskState.OVERDUE to setOf(TaskState.ABANDONED, TaskState.DONE, TaskState.CARRIED),
-        TaskState.DONE to emptySet(),
+        // 완료 취소(reopen): 체크 토글로 완료를 되돌릴 수 있게 DONE → TODAY 허용.
+        TaskState.DONE to setOf(TaskState.TODAY),
         TaskState.ABANDONED to emptySet(),
     )
 

@@ -1,5 +1,6 @@
 package app.ieoseo.server.task.service
 
+import app.ieoseo.server.debt.service.TimeDebtService
 import app.ieoseo.server.global.exception.NotFoundException
 import app.ieoseo.server.task.domain.Task
 import app.ieoseo.server.task.domain.TaskState
@@ -26,7 +27,8 @@ import kotlin.test.assertNull
 class TaskServiceTest {
 
     private val taskRepository: TaskRepository = mock(TaskRepository::class.java)
-    private val service = TaskService(taskRepository)
+    private val timeDebtService: TimeDebtService = mock(TimeDebtService::class.java)
+    private val service = TaskService(taskRepository, timeDebtService)
 
     private val owner = UUID.randomUUID()
 
@@ -115,6 +117,31 @@ class TaskServiceTest {
 
         assertEquals(TaskState.TODAY, result.state)
         assertNull(result.actualMinutes)
+        verify(timeDebtService).restoreForTask(owner, id)
+    }
+
+    @Test
+    fun `완료 시 연결된 부채 해소(resolveForTask)를 호출한다`() {
+        val id = UUID.randomUUID()
+        val task = Task(id = id, userId = owner, title = "x", estimatedMinutes = 30, date = LocalDate.now())
+        task.state = TaskState.TODAY
+        `when`(taskRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(task))
+
+        service.complete(owner, id, 25)
+
+        verify(timeDebtService).resolveForTask(owner, id)
+    }
+
+    @Test
+    fun `MISSED 태스크도 직접 완료할 수 있다`() {
+        val id = UUID.randomUUID()
+        val task = Task(id = id, userId = owner, title = "x", estimatedMinutes = 30, date = LocalDate.now())
+        task.state = TaskState.MISSED
+        `when`(taskRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(task))
+
+        val result = service.complete(owner, id, null)
+
+        assertEquals(TaskState.DONE, result.state)
     }
 
     @Test

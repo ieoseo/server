@@ -116,6 +116,28 @@ class TimeDebtService(
         return toResponse(userId, debt, today)
     }
 
+    /**
+     * 원본 태스크 완료 시 연결된 부채를 해소(RESOLVED). 미해소(PENDING/CARRIED/OVERDUE) 부채만
+     * 대상이며, 이미 종료(RESOLVED/ABANDONED)된 건 건드리지 않는다. (TaskService.complete 에서 호출)
+     */
+    @Transactional
+    fun resolveForTask(userId: UUID, taskId: UUID) {
+        timeDebtRepository.findAllByUserIdAndTaskId(userId, taskId)
+            .filter { it.status != DebtStatus.RESOLVED && it.status != DebtStatus.ABANDONED }
+            .forEach { it.status = DebtTransitions.require(it.status, DebtStatus.RESOLVED) }
+    }
+
+    /**
+     * 완료 취소(reopen) 시 해소됐던 부채를 PENDING 으로 복구한다. 탕감(ABANDONED)된 건 복구하지
+     * 않는다(명시적 내려놓기는 유지). (TaskService.reopen 에서 호출)
+     */
+    @Transactional
+    fun restoreForTask(userId: UUID, taskId: UUID) {
+        timeDebtRepository.findAllByUserIdAndTaskId(userId, taskId)
+            .filter { it.status == DebtStatus.RESOLVED }
+            .forEach { it.status = DebtTransitions.require(it.status, DebtStatus.PENDING) }
+    }
+
     /** 탕감(내려놓기). 기록은 남기고 종료 상태로 전이. */
     @Transactional
     fun abandon(userId: UUID, id: UUID, today: LocalDate = LocalDate.now()): DebtResponse {

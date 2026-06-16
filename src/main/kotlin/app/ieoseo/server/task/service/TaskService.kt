@@ -1,5 +1,6 @@
 package app.ieoseo.server.task.service
 
+import app.ieoseo.server.debt.service.TimeDebtService
 import app.ieoseo.server.global.exception.NotFoundException
 import app.ieoseo.server.task.domain.Task
 import app.ieoseo.server.task.domain.TaskState
@@ -24,6 +25,7 @@ import java.util.UUID
 @Transactional(readOnly = true)
 class TaskService(
     private val taskRepository: TaskRepository,
+    private val timeDebtService: TimeDebtService,
 ) {
     fun findAll(userId: UUID, pageable: Pageable): Page<Task> =
         taskRepository.findAllByUserId(userId, pageable)
@@ -69,6 +71,8 @@ class TaskService(
         }
         task.state = TaskTransitions.require(task.state, TaskState.DONE)
         task.actualMinutes = actualMinutes
+        // 완료 시 이 태스크로 생성됐던 미룬 시간(부채)을 해소(RESOLVED).
+        timeDebtService.resolveForTask(userId, id)
         return task
     }
 
@@ -78,6 +82,8 @@ class TaskService(
         val task = findById(userId, id)
         task.state = TaskTransitions.require(task.state, TaskState.TODAY)
         task.actualMinutes = null
+        // 완료 취소 시 해소됐던 부채를 PENDING 으로 복구한다.
+        timeDebtService.restoreForTask(userId, id)
         return task
     }
 

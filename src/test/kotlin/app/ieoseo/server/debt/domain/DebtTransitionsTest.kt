@@ -54,14 +54,16 @@ class DebtTransitionsTest {
     }
 
     @Test
-    fun `RESOLVED 에서 다른 상태로 전이 불가`() {
+    fun `RESOLVED 는 완료 취소(reopen)로 PENDING 으로만 복구된다`() {
+        assertTrue(DebtTransitions.canTransition(DebtStatus.RESOLVED, DebtStatus.PENDING))
         assertFalse(DebtTransitions.canTransition(DebtStatus.RESOLVED, DebtStatus.OVERDUE))
+        assertFalse(DebtTransitions.canTransition(DebtStatus.RESOLVED, DebtStatus.CARRIED))
     }
 
     @Test
     fun `require 는 불법 전이면 예외를 던진다`() {
         assertThrows<IllegalStateException> {
-            DebtTransitions.require(DebtStatus.RESOLVED, DebtStatus.PENDING)
+            DebtTransitions.require(DebtStatus.ABANDONED, DebtStatus.PENDING)
         }
     }
 }

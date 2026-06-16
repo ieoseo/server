@@ -10,7 +10,7 @@ package app.ieoseo.server.debt.domain
  * ```
  * 사용자는 미해소/이월/연체 상태에서 탕감(ABANDONED)할 수 있고,
  * 원본 태스크 완료 시 PENDING/CARRIED/OVERDUE 에서 RESOLVED 로 해소된다.
- * RESOLVED/ABANDONED 는 종료 상태로 더 이상 전이하지 않는다.
+ * 태스크 완료를 취소(reopen)하면 RESOLVED → PENDING 으로 복구된다. ABANDONED 는 종료 상태.
  */
 object DebtTransitions {
 
@@ -19,7 +19,8 @@ object DebtTransitions {
         DebtStatus.PENDING to setOf(DebtStatus.CARRIED, DebtStatus.OVERDUE, DebtStatus.RESOLVED, DebtStatus.ABANDONED),
         DebtStatus.CARRIED to setOf(DebtStatus.RESOLVED, DebtStatus.OVERDUE, DebtStatus.ABANDONED),
         DebtStatus.OVERDUE to setOf(DebtStatus.CARRIED, DebtStatus.RESOLVED, DebtStatus.ABANDONED),
-        DebtStatus.RESOLVED to emptySet(),
+        // 완료 취소(reopen): 원본 태스크를 다시 미완료로 되돌리면 해소됐던 부채를 PENDING 으로 복구.
+        DebtStatus.RESOLVED to setOf(DebtStatus.PENDING),
         DebtStatus.ABANDONED to emptySet(),
     )
 

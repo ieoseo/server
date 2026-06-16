@@ -18,7 +18,8 @@ object TaskTransitions {
     private val allowed: Map<TaskState, Set<TaskState>> = mapOf(
         TaskState.PENDING to setOf(TaskState.TODAY),
         TaskState.TODAY to setOf(TaskState.DONE, TaskState.MISSED, TaskState.CARRIED, TaskState.ABANDONED),
-        TaskState.MISSED to setOf(TaskState.CARRIED, TaskState.ABANDONED),
+        // 놓친 일도 뒤늦게 직접 완료할 수 있다(MISSED → DONE).
+        TaskState.MISSED to setOf(TaskState.DONE, TaskState.CARRIED, TaskState.ABANDONED),
         TaskState.CARRIED to setOf(TaskState.DONE, TaskState.OVERDUE, TaskState.ABANDONED),
         TaskState.OVERDUE to setOf(TaskState.ABANDONED, TaskState.DONE, TaskState.CARRIED),
         // 완료 취소(reopen): 체크 토글로 완료를 되돌릴 수 있게 DONE → TODAY 허용.

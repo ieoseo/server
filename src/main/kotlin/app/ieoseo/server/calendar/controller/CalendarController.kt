@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 /**
  * 외부 캘린더 연동·동기화 (이슈 #59). 계약: `docs/05-API/calendar.md`.
@@ -82,6 +83,11 @@ class CalendarController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
     ): ApiResponse<List<ExternalEventResponse>> {
+        // 무한정/역전 범위 방지(페이지네이션 없는 단순 조회라 상한을 둔다).
+        require(!from.isAfter(to)) { "from 은 to 보다 이후일 수 없습니다" }
+        require(ChronoUnit.DAYS.between(from, to) <= MAX_EXTERNAL_RANGE_DAYS) {
+            "외부 일정 조회 범위는 최대 ${MAX_EXTERNAL_RANGE_DAYS}일입니다"
+        }
         val items = calendarService.externalEvents(principal.userId, from, to).map(ExternalEventResponse::from)
         return ApiResponse.ok(items)
     }
@@ -90,4 +96,8 @@ class CalendarController(
     private fun String.toProvider(): CalendarProvider =
         runCatching { CalendarProvider.valueOf(uppercase()) }
             .getOrElse { throw IllegalArgumentException("지원하지 않는 캘린더 provider 입니다: $this") }
+
+    private companion object {
+        const val MAX_EXTERNAL_RANGE_DAYS = 366L
+    }
 }

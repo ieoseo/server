@@ -51,6 +51,9 @@ ieoseo:
     return-deeplink: ${GOOGLE_CALENDAR_RETURN_DEEPLINK:app.ieoseo://calendar-callback}
   # 외부 캘린더 연동 설정.
   calendar:
+    # 연동 토큰(access/refresh) 컬럼 암호화 키. base64 인코딩한 32바이트(AES-256).
+    # 미설정 시 평문 폴백(로컬/CI 편의) — 운영은 반드시 주입한다(ADR-0025, B-1).
+    token-encryption-key: ${CALENDAR_TOKEN_ENC_KEY:}
     notion:
       # Notion API 버전(날짜 고정). 시간이 지나면 갱신 — 환경변수 NOTION_API_VERSION 로 덮어쓸 수 있다.
       api-version: ${NOTION_API_VERSION:2022-06-28}

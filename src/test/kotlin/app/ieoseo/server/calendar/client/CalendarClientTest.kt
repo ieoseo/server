@@ -2,9 +2,12 @@ package app.ieoseo.server.calendar.client
 
 import app.ieoseo.server.calendar.domain.CalendarConnection
 import app.ieoseo.server.calendar.domain.CalendarProvider
+import app.ieoseo.server.calendar.oauth.GoogleOAuthClient
+import app.ieoseo.server.calendar.oauth.GoogleTokens
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import tools.jackson.databind.json.JsonMapper
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -15,6 +18,7 @@ import kotlin.test.assertNull
  *
  * Google/Notion: 가짜 API 가 JSON 본문을 돌려주고, ExternalEvent 매핑(날짜/시각/제목/externalId)을 확인한다.
  * Apple: 스텁이라 항상 빈 결과. 토큰 미등록은 CalendarSyncException.
+ * Google 견고화(B-3): 페이지네이션·401 토큰 갱신 재시도도 검증한다.
  */
 class CalendarClientTest {
 
@@ -26,6 +30,22 @@ class CalendarClientTest {
     private fun connection(provider: CalendarProvider, token: String? = "token-placeholder", db: String? = null) =
         CalendarConnection(userId = userId, provider = provider, accessToken = token, refreshToken = db)
 
+    /** 갱신을 쓰지 않는(호출되면 실패) 가짜 OAuth 클라이언트. */
+    private fun unusedOAuth(): GoogleOAuthClient = object : GoogleOAuthClient {
+        override fun exchangeCode(code: String): GoogleTokens = error("exchangeCode 는 호출되지 않아야 한다")
+        override fun refresh(refreshToken: String): GoogleTokens = error("refresh 는 호출되지 않아야 한다")
+    }
+
+    /** 새 access token 으로 갱신하는 가짜 OAuth 클라이언트. */
+    private fun refreshingOAuth(newToken: String): GoogleOAuthClient = object : GoogleOAuthClient {
+        override fun exchangeCode(code: String): GoogleTokens = error("exchangeCode 는 호출되지 않아야 한다")
+        override fun refresh(refreshToken: String): GoogleTokens =
+            GoogleTokens(accessToken = newToken, refreshToken = refreshToken, expiresAt = Instant.now().plusSeconds(3600))
+    }
+
+    private fun googleClient(oauth: GoogleOAuthClient = unusedOAuth(), api: GoogleEventsApi) =
+        GoogleCalendarClient(api, mapper, oauth)
+
     // ---- Google ----
 
     @Test
@@ -36,7 +56,7 @@ class CalendarClientTest {
               {"id":"g2","summary":"휴가","start":{"date":"2026-06-10"}}
             ]}
         """.trimIndent()
-        val client = GoogleCalendarClient({ _, _, _ -> body }, mapper)
+        val client = googleClient(api = { _, _, _, _ -> body })
 
         val events = client.fetchEvents(connection(CalendarProvider.GOOGLE), from, to)
 
@@ -54,7 +74,7 @@ class CalendarClientTest {
         val body = """
             {"items":[{"id":"g3","summary":"아침 미팅","start":{"dateTime":"2026-06-16T23:00:00Z"}}]}
         """.trimIndent()
-        val client = GoogleCalendarClient({ _, _, _ -> body }, mapper)
+        val client = googleClient(api = { _, _, _, _ -> body })
 
         val events = client.fetchEvents(connection(CalendarProvider.GOOGLE), from, to)
 
@@ -64,10 +84,47 @@ class CalendarClientTest {
 
     @Test
     fun `Google 클라이언트는 토큰이 없으면 CalendarSyncException`() {
-        val client = GoogleCalendarClient({ _, _, _ -> "{}" }, mapper)
+        val client = googleClient(api = { _, _, _, _ -> "{}" })
         assertThrows<CalendarSyncException> {
             client.fetchEvents(connection(CalendarProvider.GOOGLE, token = null), from, to)
         }
+    }
+
+    @Test
+    fun `Google 클라이언트는 nextPageToken 을 따라 여러 페이지를 모은다`() {
+        val page1 = """{"items":[{"id":"g1","summary":"A","start":{"date":"2026-06-04"}}],"nextPageToken":"p2"}"""
+        val page2 = """{"items":[{"id":"g2","summary":"B","start":{"date":"2026-06-05"}}]}"""
+        val client = googleClient(api = { _, _, _, pageToken -> if (pageToken == null) page1 else page2 })
+
+        val events = client.fetchEvents(connection(CalendarProvider.GOOGLE), from, to)
+
+        assertEquals(2, events.size)
+        assertEquals(listOf("g1", "g2"), events.map { it.externalId })
+    }
+
+    @Test
+    fun `Google 클라이언트는 401 이면 토큰을 갱신하고 재시도한다`() {
+        val body = """{"items":[{"id":"g1","summary":"A","start":{"date":"2026-06-04"}}]}"""
+        // 옛 토큰이면 401, 새 토큰이면 정상 응답.
+        val api = GoogleEventsApi { accessToken, _, _, _ ->
+            if (accessToken == "old-token") throw CalendarAuthExpiredException("401") else body
+        }
+        val conn = connection(CalendarProvider.GOOGLE, token = "old-token", db = "refresh-token")
+        val client = googleClient(oauth = refreshingOAuth("new-token"), api = api)
+
+        val events = client.fetchEvents(conn, from, to)
+
+        assertEquals(1, events.size)
+        assertEquals("new-token", conn.accessToken) // 갱신 반영
+    }
+
+    @Test
+    fun `Google 클라이언트는 refresh token 이 없으면 401 을 그대로 전파한다`() {
+        val api = GoogleEventsApi { _, _, _, _ -> throw CalendarAuthExpiredException("401") }
+        val conn = connection(CalendarProvider.GOOGLE, token = "old-token", db = null) // refreshToken 없음
+        val client = googleClient(api = api)
+
+        assertThrows<CalendarSyncException> { client.fetchEvents(conn, from, to) }
     }
 
     // ---- Notion ----

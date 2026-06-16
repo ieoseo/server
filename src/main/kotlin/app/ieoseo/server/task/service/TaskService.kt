@@ -72,6 +72,15 @@ class TaskService(
         return task
     }
 
+    /** 완료 취소(reopen): DONE → TODAY 로 되돌리고 실제 소요 기록을 비운다(체크 토글 UX). */
+    @Transactional
+    fun reopen(userId: UUID, id: UUID): Task {
+        val task = findById(userId, id)
+        task.state = TaskTransitions.require(task.state, TaskState.TODAY)
+        task.actualMinutes = null
+        return task
+    }
+
     @Transactional
     fun carry(userId: UUID, id: UUID, toDate: LocalDate): Task {
         val task = findById(userId, id)

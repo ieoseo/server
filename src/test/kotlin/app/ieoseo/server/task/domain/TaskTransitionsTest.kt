@@ -55,8 +55,8 @@ class TaskTransitionsTest {
     }
 
     @Test
-    fun `DONE 은 종료 상태라 어떤 전이도 불가하다`() {
-        assertFalse(TaskTransitions.canTransition(TaskState.DONE, TaskState.TODAY))
+    fun `DONE 은 완료 취소(reopen)로 TODAY 로만 전이한다`() {
+        assertTrue(TaskTransitions.canTransition(TaskState.DONE, TaskState.TODAY))
         assertFalse(TaskTransitions.canTransition(TaskState.DONE, TaskState.CARRIED))
     }
 

@@ -81,6 +81,13 @@ class TaskController(
     ): ApiResponse<TaskResponse> =
         ApiResponse.ok(TaskResponse.from(taskService.complete(principal.userId, id, request?.actualMinutes)))
 
+    @PostMapping("/{id}/reopen")
+    fun reopen(
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        @PathVariable id: UUID,
+    ): ApiResponse<TaskResponse> =
+        ApiResponse.ok(TaskResponse.from(taskService.reopen(principal.userId, id)))
+
     @PostMapping("/{id}/carry")
     fun carry(
         @AuthenticationPrincipal principal: AuthPrincipal,

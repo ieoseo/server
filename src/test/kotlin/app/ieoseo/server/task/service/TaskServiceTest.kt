@@ -16,6 +16,7 @@ import java.time.LocalDate
 import java.util.Optional
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /**
  * TaskService 소유권 스코프 단위 테스트 (#30).
@@ -100,6 +101,20 @@ class TaskServiceTest {
 
         assertEquals(TaskState.DONE, result.state)
         assertEquals(25, result.actualMinutes)
+    }
+
+    @Test
+    fun `완료 취소(reopen)는 DONE 을 TODAY 로 되돌리고 actualMinutes 를 비운다`() {
+        val id = UUID.randomUUID()
+        val task = Task(id = id, userId = owner, title = "x", estimatedMinutes = 30, date = LocalDate.now())
+        task.state = TaskState.DONE
+        task.actualMinutes = 25
+        `when`(taskRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(task))
+
+        val result = service.reopen(owner, id)
+
+        assertEquals(TaskState.TODAY, result.state)
+        assertNull(result.actualMinutes)
     }
 
     @Test

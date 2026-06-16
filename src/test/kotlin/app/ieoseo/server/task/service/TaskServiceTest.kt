@@ -2,6 +2,7 @@ package app.ieoseo.server.task.service
 
 import app.ieoseo.server.global.exception.NotFoundException
 import app.ieoseo.server.task.domain.Task
+import app.ieoseo.server.task.domain.TaskState
 import app.ieoseo.server.task.repository.TaskRepository
 import app.ieoseo.server.task.dto.TaskCreateRequest
 import org.junit.jupiter.api.Test
@@ -44,6 +45,30 @@ class TaskServiceTest {
         val captor = ArgumentCaptor.forClass(Task::class.java)
         verify(taskRepository).save(captor.capture())
         assertEquals(owner, captor.value.userId)
+    }
+
+    @Test
+    fun `오늘 날짜로 생성하면 즉시 활성(TODAY) 상태가 된다`() {
+        val request = TaskCreateRequest(title = "오늘 할 일", estimatedMinutes = 30, date = LocalDate.now())
+        `when`(taskRepository.save(anyTask())).thenAnswer { it.arguments[0] }
+
+        service.create(owner, request)
+
+        val captor = ArgumentCaptor.forClass(Task::class.java)
+        verify(taskRepository).save(captor.capture())
+        assertEquals(TaskState.TODAY, captor.value.state)
+    }
+
+    @Test
+    fun `미래 날짜로 생성하면 PENDING 상태를 유지한다`() {
+        val request = TaskCreateRequest(title = "다음 주", estimatedMinutes = 30, date = LocalDate.now().plusDays(7))
+        `when`(taskRepository.save(anyTask())).thenAnswer { it.arguments[0] }
+
+        service.create(owner, request)
+
+        val captor = ArgumentCaptor.forClass(Task::class.java)
+        verify(taskRepository).save(captor.capture())
+        assertEquals(TaskState.PENDING, captor.value.state)
     }
 
     @Test

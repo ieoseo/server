@@ -35,8 +35,15 @@ class TaskService(
         taskRepository.findByIdAndUserId(id, userId).orElseThrow { NotFoundException("Task", id) }
 
     @Transactional
-    fun create(userId: UUID, request: TaskCreateRequest): Task =
-        taskRepository.save(request.toEntity(userId))
+    fun create(userId: UUID, request: TaskCreateRequest): Task {
+        val task = request.toEntity(userId)
+        // 오늘이거나 지난 날짜의 태스크는 즉시 활성(TODAY)으로 시작해 같은 날 완료(TODAY→DONE)가
+        // 가능하게 한다. 미래 날짜는 PENDING 유지(당일 롤오버 시 TODAY 로 승격). FRD 5.2.
+        if (!task.date.isAfter(LocalDate.now())) {
+            task.state = TaskState.TODAY
+        }
+        return taskRepository.save(task)
+    }
 
     @Transactional
     fun update(userId: UUID, id: UUID, request: TaskUpdateRequest): Task {

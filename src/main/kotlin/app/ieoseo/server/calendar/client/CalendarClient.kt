@@ -9,7 +9,14 @@ import java.time.LocalDate
  * 외부 캘린더 일정 동기화 실패. 토큰 만료·권한 거부·provider API 오류·미지원 provider 등을
  * 포괄한다. 동기화 service 가 잡아 연결 상태를 SYNC_FAILED 로 기록한다(재인증 유도).
  */
-class CalendarSyncException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+open class CalendarSyncException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+/**
+ * 외부 캘린더 인증 만료(HTTP 401). access token 이 만료/무효라 **토큰 갱신 후 재시도**가 가능함을
+ * 알리는 전용 신호다. [CalendarSyncException] 의 하위라, 갱신이 불가능하거나 재시도도 실패하면
+ * 그대로 동기화 실패로 처리된다(연결 SYNC_FAILED).
+ */
+class CalendarAuthExpiredException(message: String, cause: Throwable? = null) : CalendarSyncException(message, cause)
 
 /**
  * provider 캘린더에서 일정을 가져오는 클라이언트 (이슈 #59).

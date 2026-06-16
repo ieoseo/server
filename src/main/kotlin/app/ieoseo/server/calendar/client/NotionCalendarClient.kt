@@ -140,8 +140,8 @@ class NotionCalendarClient(
     private fun parseStart(start: String): Pair<LocalDate, String?>? {
         if (start.contains('T')) {
             return runCatching {
-                val odt = OffsetDateTime.parse(start)
-                odt.toLocalDate() to "%02d:%02d".format(odt.hour, odt.minute)
+                // 절대 시각을 표시 타임존(KST)으로 환산 — UTC 그대로 쓰면 날짜·시각이 어긋난다.
+                OffsetDateTime.parse(start).toDisplayDateAndTime()
             }.getOrNull()
         }
         return runCatching { LocalDate.parse(start) to null as String? }.getOrNull()

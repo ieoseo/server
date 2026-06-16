@@ -62,6 +62,11 @@ class TaskService(
     @Transactional
     fun complete(userId: UUID, id: UUID, actualMinutes: Int?): Task {
         val task = findById(userId, id)
+        // 아직 활성화되지 않은(PENDING) 태스크도 바로 완료할 수 있게 TODAY 를 경유한다.
+        // 당일 추가분은 TODAY 로 생성되지만, 그 전에 만들어진 PENDING 도 완료 가능해야 한다.
+        if (task.state == TaskState.PENDING) {
+            task.state = TaskTransitions.require(task.state, TaskState.TODAY)
+        }
         task.state = TaskTransitions.require(task.state, TaskState.DONE)
         task.actualMinutes = actualMinutes
         return task

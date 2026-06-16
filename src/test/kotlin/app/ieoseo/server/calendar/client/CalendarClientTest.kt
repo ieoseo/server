@@ -49,6 +49,20 @@ class CalendarClientTest {
     }
 
     @Test
+    fun `Google 클라이언트는 UTC 시각을 KST(+9)로 환산해 날짜·시각을 맞춘다`() {
+        // 2026-06-16T23:00:00Z == 2026-06-17 08:00 KST. UTC 그대로 쓰면 6/16 23:00 으로 어긋난다.
+        val body = """
+            {"items":[{"id":"g3","summary":"아침 미팅","start":{"dateTime":"2026-06-16T23:00:00Z"}}]}
+        """.trimIndent()
+        val client = GoogleCalendarClient({ _, _, _ -> body }, mapper)
+
+        val events = client.fetchEvents(connection(CalendarProvider.GOOGLE), from, to)
+
+        assertEquals(LocalDate.of(2026, 6, 17), events[0].date)
+        assertEquals("08:00", events[0].time)
+    }
+
+    @Test
     fun `Google 클라이언트는 토큰이 없으면 CalendarSyncException`() {
         val client = GoogleCalendarClient({ _, _, _ -> "{}" }, mapper)
         assertThrows<CalendarSyncException> {

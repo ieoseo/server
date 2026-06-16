@@ -89,6 +89,20 @@ class TaskServiceTest {
     }
 
     @Test
+    fun `PENDING 태스크도 완료하면 TODAY 를 경유해 DONE 으로 전이한다`() {
+        val id = UUID.randomUUID()
+        // 생성-시점 보정 전에 만들어진 PENDING 태스크(예: 어제까지 미래였던 항목).
+        val task = Task(id = id, userId = owner, title = "x", estimatedMinutes = 30, date = LocalDate.now())
+        task.state = TaskState.PENDING
+        `when`(taskRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(task))
+
+        val result = service.complete(owner, id, 25)
+
+        assertEquals(TaskState.DONE, result.state)
+        assertEquals(25, result.actualMinutes)
+    }
+
+    @Test
     fun `타인 태스크 완료(상태전이)는 404 로 차단된다`() {
         val id = UUID.randomUUID()
         `when`(taskRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.empty())

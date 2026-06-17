@@ -50,9 +50,14 @@ class TaskService(
     @Transactional
     fun update(userId: UUID, id: UUID, request: TaskUpdateRequest): Task {
         val task = findById(userId, id)
+        // 범위 불변식(startDate <= date)은 엔티티 init 에서만 검사되므로, 가변 갱신 시 경계에서 확인.
+        request.startDate?.let {
+            require(!it.isAfter(request.date)) { "startDate 는 date(마감)보다 뒤일 수 없다" }
+        }
         task.title = request.title
         task.estimatedMinutes = request.estimatedMinutes
         task.date = request.date
+        task.startDate = request.startDate
         task.category = request.category
         task.eventId = request.eventId
         // 템플릿 반복 규칙 수정은 "이후 생성분에만" 반영된다(FRD 5.4). 이미 생성된 인스턴스는

@@ -79,6 +79,8 @@ data class TaskCreateRequest(
     @field:NotBlank @field:Size(max = 200) val title: String,
     @field:Positive val estimatedMinutes: Int,
     @field:NotNull val date: LocalDate,
+    /** 범위 태스크 시작일(선택, #50). 있으면 `startDate <= date`(마감) 이어야 한다. */
+    val startDate: LocalDate? = null,
     @field:Size(max = 50) val category: String? = null,
     val eventId: UUID? = null,
     @field:Valid val recurrence: RecurrenceDto? = null,
@@ -88,6 +90,7 @@ data class TaskCreateRequest(
         title = title,
         estimatedMinutes = estimatedMinutes,
         date = date,
+        startDate = startDate,
         category = category,
         eventId = eventId,
         recurrence = recurrence?.toDomain() ?: RecurrenceRule.none(),
@@ -98,6 +101,8 @@ data class TaskUpdateRequest(
     @field:NotBlank @field:Size(max = 200) val title: String,
     @field:Positive val estimatedMinutes: Int,
     @field:NotNull val date: LocalDate,
+    /** 범위 태스크 시작일(선택, #50). null 로 보내면 단일로 되돌린다. */
+    val startDate: LocalDate? = null,
     @field:Size(max = 50) val category: String? = null,
     val eventId: UUID? = null,
     @field:Valid val recurrence: RecurrenceDto? = null,
@@ -118,6 +123,8 @@ data class TaskResponse(
     val title: String,
     val estimatedMinutes: Int,
     val date: LocalDate,
+    /** 범위 태스크 시작일(#50). null 이면 단일 날짜. */
+    val startDate: LocalDate?,
     val state: TaskState,
     val category: String?,
     val eventId: UUID?,
@@ -133,6 +140,7 @@ data class TaskResponse(
             title = task.title,
             estimatedMinutes = task.estimatedMinutes,
             date = task.date,
+            startDate = task.startDate,
             state = task.state,
             category = task.category,
             eventId = task.eventId,

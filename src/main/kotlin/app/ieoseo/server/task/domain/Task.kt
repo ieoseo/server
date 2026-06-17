@@ -49,9 +49,19 @@ class Task(
     @Column(name = "estimated_minutes", nullable = false)
     var estimatedMinutes: Int,
 
-    /** 현재 예정일(이월되면 갱신된다) */
+    /**
+     * 마감/예정일(이월되면 갱신된다). **항상 존재하는 앵커**다 — 단일 태스크는 그날,
+     * 범위 태스크는 종료일. 스케줄러·부채·플랜 쿼리는 모두 이 값을 기준으로 동작한다(#50).
+     */
     @Column(name = "date", nullable = false)
     var date: LocalDate,
+
+    /**
+     * 범위 태스크의 시작일(선택, #50). null 이면 단일 날짜 태스크다.
+     * 있으면 [date](종료/마감)와 함께 `startDate ~ date` 범위를 이룬다(`startDate <= date`).
+     */
+    @Column(name = "start_date")
+    var startDate: LocalDate? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false, length = 16)
@@ -84,5 +94,8 @@ class Task(
     init {
         require(title.isNotBlank()) { "title 은 비어 있을 수 없다" }
         require(estimatedMinutes > 0) { "estimatedMinutes 는 1 이상이어야 한다" }
+        startDate?.let {
+            require(!it.isAfter(date)) { "startDate 는 date(마감)보다 뒤일 수 없다" }
+        }
     }
 }

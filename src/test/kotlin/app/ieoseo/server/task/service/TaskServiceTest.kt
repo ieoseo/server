@@ -6,6 +6,7 @@ import app.ieoseo.server.task.domain.Task
 import app.ieoseo.server.task.domain.TaskState
 import app.ieoseo.server.task.repository.TaskRepository
 import app.ieoseo.server.task.dto.TaskCreateRequest
+import app.ieoseo.server.task.dto.TaskUpdateRequest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentCaptor
@@ -48,6 +49,38 @@ class TaskServiceTest {
         val captor = ArgumentCaptor.forClass(Task::class.java)
         verify(taskRepository).save(captor.capture())
         assertEquals(owner, captor.value.userId)
+    }
+
+    @Test
+    fun `생성 시 startDate(범위 시작)를 엔티티에 반영한다`() {
+        val request = TaskCreateRequest(
+            title = "여행 준비",
+            estimatedMinutes = 120,
+            date = LocalDate.of(2026, 6, 7),
+            startDate = LocalDate.of(2026, 6, 4),
+        )
+        `when`(taskRepository.save(anyTask())).thenAnswer { it.arguments[0] }
+
+        service.create(owner, request)
+
+        val captor = ArgumentCaptor.forClass(Task::class.java)
+        verify(taskRepository).save(captor.capture())
+        assertEquals(LocalDate.of(2026, 6, 4), captor.value.startDate)
+    }
+
+    @Test
+    fun `update 에서 startDate 가 date(마감)보다 뒤면 거부한다(400)`() {
+        val id = UUID.randomUUID()
+        val task = Task(id = id, userId = owner, title = "x", estimatedMinutes = 30, date = LocalDate.of(2026, 6, 4))
+        `when`(taskRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(task))
+        val request = TaskUpdateRequest(
+            title = "x",
+            estimatedMinutes = 30,
+            date = LocalDate.of(2026, 6, 4),
+            startDate = LocalDate.of(2026, 6, 7), // 마감보다 뒤 → 거부
+        )
+
+        assertThrows<IllegalArgumentException> { service.update(owner, id, request) }
     }
 
     @Test

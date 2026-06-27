@@ -97,6 +97,33 @@ class UserProvisioningFilterTest {
     }
 
     @Test
+    fun `신규 생성 시 요청에 신규 표시 attribute 를 설정한다`() {
+        authenticate(AuthPrincipal(userId, email = "jiwoo@ieoseo.app"))
+        `when`(repo.findById(userId)).thenReturn(Optional.empty())
+
+        filter.doFilter(request, response, chain)
+
+        verify(request).setAttribute(
+            eq(UserProvisioningFilter.NEW_USER_REQUEST_ATTR),
+            eq(true),
+        )
+    }
+
+    @Test
+    fun `기존 사용자면 신규 표시 attribute 를 설정하지 않는다`() {
+        authenticate(AuthPrincipal(userId, email = "jiwoo@ieoseo.app"))
+        `when`(repo.findById(userId))
+            .thenReturn(Optional.of(User(id = userId, email = "jiwoo@ieoseo.app", nickname = "jiwoo")))
+
+        filter.doFilter(request, response, chain)
+
+        verify(request, never()).setAttribute(
+            eq(UserProvisioningFilter.NEW_USER_REQUEST_ATTR),
+            org.mockito.ArgumentMatchers.any(),
+        )
+    }
+
+    @Test
     fun `활성 사용자가 이미 존재하면 저장하지 않고 체인을 진행한다`() {
         authenticate(AuthPrincipal(userId, email = "jiwoo@ieoseo.app"))
         val active = User(id = userId, email = "jiwoo@ieoseo.app", nickname = "jiwoo")

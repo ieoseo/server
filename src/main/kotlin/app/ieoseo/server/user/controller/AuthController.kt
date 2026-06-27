@@ -3,8 +3,10 @@ package app.ieoseo.server.user.controller
 import app.ieoseo.server.user.dto.*
 
 import app.ieoseo.server.global.security.AuthPrincipal
+import app.ieoseo.server.global.security.UserProvisioningFilter
 import app.ieoseo.server.user.service.AuthService
 import app.ieoseo.server.settings.service.UserSettingsService
+import jakarta.servlet.http.HttpServletRequest
 import app.ieoseo.server.global.common.ApiResponse
 import app.ieoseo.server.settings.dto.SettingsResponse
 import app.ieoseo.server.settings.dto.UpdateSettingsRequest
@@ -34,8 +36,15 @@ class AuthController(
     private val userSettingsService: UserSettingsService,
 ) {
     @GetMapping("/me")
-    fun me(@AuthenticationPrincipal principal: AuthPrincipal): ApiResponse<UserResponse> =
-        ApiResponse.ok(UserResponse.from(authService.me(principal.userId)))
+    fun me(
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        request: HttpServletRequest,
+    ): ApiResponse<UserResponse> {
+        // UserProvisioningFilter 가 이번 요청에 사용자를 막 생성했으면 isNew=true 로 알린다
+        // (client 가 닉네임 설정 화면을 띄움). 기존 사용자면 attribute 없음 → false.
+        val isNew = request.getAttribute(UserProvisioningFilter.NEW_USER_REQUEST_ATTR) == true
+        return ApiResponse.ok(UserResponse.from(authService.me(principal.userId), isNew))
+    }
 
     /** 프로필(닉네임) 수정(이슈 #56). 인증 필요. 검증 실패 → 400, 사용자 없음 → 404. */
     @PatchMapping("/me")

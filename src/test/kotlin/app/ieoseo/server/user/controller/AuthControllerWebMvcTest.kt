@@ -3,6 +3,7 @@ package app.ieoseo.server.user.controller
 import app.ieoseo.server.user.domain.User
 import app.ieoseo.server.global.security.AuthPrincipal
 import app.ieoseo.server.global.security.SecurityConfig
+import app.ieoseo.server.global.security.UserProvisioningFilter
 import app.ieoseo.server.user.service.AuthService
 import app.ieoseo.server.settings.service.UpdateUserSettingsCommand
 import app.ieoseo.server.settings.service.UserSettingsService
@@ -97,6 +98,20 @@ class AuthControllerWebMvcTest {
             .andExpect(jsonPath("$.data.id").value(userId.toString()))
             .andExpect(jsonPath("$.data.email").value("jiwoo@ieoseo.app"))
             .andExpect(jsonPath("$.data.nickname").value("지우"))
+            .andExpect(jsonPath("$.data.isNew").value(false))
+    }
+
+    @Test
+    fun `me 는 신규 provisioning 요청이면 isNew true 를 반환한다`() {
+        `when`(authService.me(userId)).thenReturn(user())
+
+        mockMvc.perform(
+            get("/api/v1/auth/me")
+                .with(authentication(asUser()))
+                .requestAttr(UserProvisioningFilter.NEW_USER_REQUEST_ATTR, true),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.isNew").value(true))
     }
 
     @Test

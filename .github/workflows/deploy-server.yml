@@ -30,8 +30,12 @@ jobs:
 
       - name: Check Azure secrets
         id: gate
+        env:
+          # 시크릿을 run 본문에 직접 보간하지 않고 env 로 받아 변수명으로만 검사한다
+          # (보간하면 마스킹 전에 스크립트 렌더 파이프라인을 평문으로 통과).
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         run: |
-          if [ -n "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+          if [ -n "$AZURE_CLIENT_ID" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -68,6 +72,9 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
+            # 응답 JSON 에 리소스 생성자 이메일(createdBy, PII)·ACA 아웃바운드 IP 가 섞여
+            # 공개 CI 로그에 남는다. 배포 성패는 종료코드로만 판단하므로 출력을 끈다(-o none).
             az containerapp update \
               -n "${{ env.CONTAINER_APP }}" -g "${{ env.RESOURCE_GROUP }}" \
-              --image "${{ env.IMAGE }}:${{ github.sha }}"
+              --image "${{ env.IMAGE }}:${{ github.sha }}" \
+              -o none

@@ -33,7 +33,7 @@ class SecurityConfig {
     ): JwtDecoder {
         // Supabase 비대칭 서명 키는 ES256(ECC P-256)이다(JWKS 의 alg=ES256). NimbusJwtDecoder
         // 기본 기대 알고리즘은 RS256 이라 명시하지 않으면 ES256 토큰을 거부(401)한다.
-        // 레거시 호환 위해 RS256 도 함께 허용한다.
+        // ES256 만 허용한다 — 실제로 쓰지 않는 RS256 허용은 불필요한 알고리즘 표면이라 제거(S6).
         // 서명·만료만으로는 부족하다 — 발급자(iss)를 프로젝트 URL 로 핀 고정해 방어를 강화한다.
         // JWKS URI 가 비어 있거나(로컬/운영 미설정) 형식이 예상과 다르면 발급자를 도출할 수 없어
         // iss 검증이 통째로 생략된다 — 이를 묵인하지 않고 기동을 실패시킨다(S1, fail-fast).
@@ -44,7 +44,6 @@ class SecurityConfig {
             )
         val decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
             .jwsAlgorithm(SignatureAlgorithm.ES256)
-            .jwsAlgorithm(SignatureAlgorithm.RS256)
             .build()
         decoder.setJwtValidator(
             DelegatingOAuth2TokenValidator(JwtValidators.createDefault(), JwtIssuerValidator(issuer)),

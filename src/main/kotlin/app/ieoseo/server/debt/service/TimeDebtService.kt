@@ -10,7 +10,9 @@ import app.ieoseo.server.task.repository.TaskRepository
 import app.ieoseo.server.debt.repository.TimeDebtRepository
 import app.ieoseo.server.debt.dto.DebtResponse
 import app.ieoseo.server.debt.dto.DebtSummaryResponse
-import org.springframework.beans.factory.annotation.Value
+import app.ieoseo.server.settings.domain.UserSettings
+import app.ieoseo.server.settings.domain.WeekStart
+import app.ieoseo.server.settings.repository.UserSettingsRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -31,9 +33,18 @@ import java.util.UUID
 class TimeDebtService(
     private val timeDebtRepository: TimeDebtRepository,
     private val taskRepository: TaskRepository,
-    @param:Value("\${ieoseo.max-daily-minutes:480}")
-    private val maxDailyMinutes: Int,
+    private val userSettingsRepository: UserSettingsRepository,
 ) {
+    /** 사용자 설정(없으면 기본값 — lazy 생성/저장은 하지 않아 readOnly 트랜잭션에서도 안전, F2·F8). */
+    private fun settingsOf(userId: UUID): UserSettings =
+        userSettingsRepository.findById(userId).orElseGet { UserSettings.defaults(userId) }
+
+    /** 사용자 주간 시작 요일에 맞춘 주 시작일(F8). */
+    private fun weekStartFor(today: LocalDate, weekStart: WeekStart): LocalDate {
+        val dow = if (weekStart == WeekStart.SUN) DayOfWeek.SUNDAY else DayOfWeek.MONDAY
+        return today.with(TemporalAdjusters.previousOrSame(dow))
+    }
+
     fun findAll(userId: UUID, pageable: Pageable): Page<TimeDebt> =
         timeDebtRepository.findAllByUserId(userId, pageable)
 
@@ -67,9 +78,9 @@ class TimeDebtService(
         return page.map { DebtResponse.from(it, title = titles[it.taskId] ?: "", today = today) }
     }
 
-    /** 주간 부채 요약(주 시작 월요일 기준). 종료 상태(RESOLVED/ABANDONED)는 총합에서 제외. */
+    /** 주간 부채 요약(사용자 weekStart 설정 기준, F8). 종료 상태(RESOLVED/ABANDONED)는 총합에서 제외. */
     fun summary(userId: UUID, today: LocalDate = LocalDate.now()): DebtSummaryResponse {
-        val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val weekStart = weekStartFor(today, settingsOf(userId).weekStart)
         val weekEnd = weekStart.plusDays(6)
         val debts = timeDebtRepository.findAllByUserIdAndOriginDateBetween(userId, weekStart, weekEnd)
 
@@ -107,7 +118,8 @@ class TimeDebtService(
             taskMinutes = debt.minutes,
             today = today,
             scheduledMinutesByDate = scheduledMinutesForWeek(userId, today),
-            maxDailyMinutes = maxDailyMinutes,
+            // 사용자별 '하루 최대 예약 시간' 설정을 반영한다(전역 상수 아님, F2).
+            maxDailyMinutes = settingsOf(userId).maxDailyMinutes,
         )
         val target = if (plan.overdue) DebtStatus.OVERDUE else DebtStatus.CARRIED
         debt.status = DebtTransitions.require(debt.status, target)

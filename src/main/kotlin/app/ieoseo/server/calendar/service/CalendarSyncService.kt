@@ -6,6 +6,7 @@ import app.ieoseo.server.calendar.client.CalendarClientRegistry
 import app.ieoseo.server.calendar.client.CalendarSyncException
 import app.ieoseo.server.calendar.repository.CalendarConnectionRepository
 import app.ieoseo.server.calendar.repository.ExternalEventRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -36,6 +37,8 @@ class CalendarSyncService(
     private val externalEventRepository: ExternalEventRepository,
     private val clientRegistry: CalendarClientRegistry,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     /** 동기화 기본 조회 창(오늘 기준 과거/미래). */
     private val pastWindowDays = 30L
     private val futureWindowDays = 120L
@@ -55,7 +58,15 @@ class CalendarSyncService(
             val imported = fetched.sumOf { upsert(it) }
             connection.markSynced(Instant.now())
             ProviderSyncResult(connection, imported)
-        } catch (_: CalendarSyncException) {
+        } catch (e: CalendarSyncException) {
+            log.warn("캘린더 동기화 실패(provider={}) — SYNC_FAILED 처리", connection.provider, e)
+            connection.markSyncFailed()
+            ProviderSyncResult(connection, imported = 0)
+        } catch (e: Exception) {
+            // 예상 못한 예외(Jackson 파싱·DB 제약·NPE 등)도 해당 연결만 격리한다 —
+            // 그렇지 않으면 syncAll 의 map 밖으로 전파돼 다른 연결까지 동기화가 중단되고,
+            // 이 연결이 SYNC_FAILED 로도 표기되지 않는다(문서화한 격리 계약 위반).
+            log.error("캘린더 동기화 중 예상치 못한 오류(provider={}) — SYNC_FAILED 처리", connection.provider, e)
             connection.markSyncFailed()
             ProviderSyncResult(connection, imported = 0)
         }

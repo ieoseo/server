@@ -96,6 +96,32 @@ class RecurrenceInstanceServiceTest {
     }
 
     @Test
+    fun `이미 다른 제목 태스크가 점유한 날에도 다른 반복 템플릿 인스턴스를 만든다(F1)`() {
+        // "운동" 태스크가 월요일들을 이미 점유. 새로 추가된 "독서" 반복 템플릿은 같은 월요일들에
+        // 인스턴스를 만들어야 한다. 날짜만으로 dedup 하면 둘째 템플릿이 영구히 누락된다.
+        val template = template(
+            date = today,
+            minutes = 30,
+            title = "독서",
+            rule = RecurrenceRule.weekly(setOf(DayOfWeek.MONDAY)),
+        )
+        `when`(userRepository.findAll()).thenReturn(listOf(user()))
+        `when`(taskRepository.findAllByUserIdAndRecurrenceFrequencyNot(userId, RecurrenceFrequency.NONE))
+            .thenReturn(listOf(template))
+        val occupiedByOther = listOf(today, today.plusDays(7), today.plusDays(14)).map {
+            Task(userId = userId, title = "운동", estimatedMinutes = 30, date = it, state = TaskState.PENDING)
+        }
+        `when`(taskRepository.findAllByUserIdAndDateBetween(userId, today, today.plusDays(horizonDays), Pageable.unpaged()))
+            .thenReturn(PageImpl(occupiedByOther))
+
+        val created = service.run(today)
+
+        // (date,title) dedup 이면 "독서" 월요일 3건 생성. date 만이면 0(월요일 점유됨).
+        assertEquals(3, created)
+        assertEquals(listOf("독서", "독서", "독서"), captureSaveAll().map { it.title })
+    }
+
+    @Test
     fun `생성할 인스턴스가 없으면 saveAll 을 호출하지 않는다`() {
         `when`(userRepository.findAll()).thenReturn(listOf(user()))
         `when`(taskRepository.findAllByUserIdAndRecurrenceFrequencyNot(userId, RecurrenceFrequency.NONE))

@@ -82,4 +82,15 @@ class CalendarTokenEncryptionConverterTest {
         assertThatThrownBy { CalendarTokenEncryptionConverter(shortKey) }
             .isInstanceOf(IllegalArgumentException::class.java)
     }
+
+    @Test
+    fun `다른 키로 복호화하면 토큰을 노출하지 않는 명확한 예외로 감싼다(C6)`() {
+        val otherKey = Base64.getEncoder().encodeToString(ByteArray(32) { (it + 7).toByte() })
+        val otherConverter = CalendarTokenEncryptionConverter(otherKey)
+        val stored = converter.convertToDatabaseColumn("ya29.super-secret-token")
+
+        assertThatThrownBy { otherConverter.convertToEntityAttribute(stored) }
+            .isInstanceOf(CalendarTokenDecryptException::class.java)
+            .hasMessageNotContaining("super-secret")
+    }
 }

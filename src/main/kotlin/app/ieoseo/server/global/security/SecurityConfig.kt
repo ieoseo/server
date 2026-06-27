@@ -34,18 +34,21 @@ class SecurityConfig {
         // Supabase 비대칭 서명 키는 ES256(ECC P-256)이다(JWKS 의 alg=ES256). NimbusJwtDecoder
         // 기본 기대 알고리즘은 RS256 이라 명시하지 않으면 ES256 토큰을 거부(401)한다.
         // 레거시 호환 위해 RS256 도 함께 허용한다.
+        // 서명·만료만으로는 부족하다 — 발급자(iss)를 프로젝트 URL 로 핀 고정해 방어를 강화한다.
+        // JWKS URI 가 비어 있거나(로컬/운영 미설정) 형식이 예상과 다르면 발급자를 도출할 수 없어
+        // iss 검증이 통째로 생략된다 — 이를 묵인하지 않고 기동을 실패시킨다(S1, fail-fast).
+        val issuer = supabaseIssuerFrom(jwkSetUri)
+            ?: error(
+                "JWKS URI 가 비어 있거나 형식이 올바르지 않습니다('.well-known/jwks.json' 로 끝나야 함). " +
+                    "발급자(iss) 검증을 생략할 수 없어 기동을 중단합니다 — SUPABASE_JWKS_URI 를 확인하세요.",
+            )
         val decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
             .jwsAlgorithm(SignatureAlgorithm.ES256)
             .jwsAlgorithm(SignatureAlgorithm.RS256)
             .build()
-        // 서명·만료만으로는 부족하다 — 발급자(iss)를 프로젝트 URL 로 핀 고정해 방어를 강화한다.
-        // JWKS URI 형식이 예상과 다르거나 비어 있으면(로컬 미설정) 발급자 검증은 생략한다(fail-safe).
-        val issuer = supabaseIssuerFrom(jwkSetUri)
-        if (issuer != null) {
-            decoder.setJwtValidator(
-                DelegatingOAuth2TokenValidator(JwtValidators.createDefault(), JwtIssuerValidator(issuer)),
-            )
-        }
+        decoder.setJwtValidator(
+            DelegatingOAuth2TokenValidator(JwtValidators.createDefault(), JwtIssuerValidator(issuer)),
+        )
         return decoder
     }
 
@@ -95,7 +98,7 @@ class SecurityConfig {
 /**
  * Supabase JWKS URI 에서 발급자(iss)를 도출한다.
  * `https://<ref>.supabase.co/auth/v1/.well-known/jwks.json` → `https://<ref>.supabase.co/auth/v1`.
- * 비어 있거나 예상 접미사로 끝나지 않으면 null(발급자 검증 생략, fail-safe).
+ * 비어 있거나 예상 접미사로 끝나지 않으면 null — 호출부(jwtDecoder)가 이를 기동 실패로 처리한다(S1).
  */
 internal fun supabaseIssuerFrom(jwkSetUri: String): String? {
     val suffix = "/.well-known/jwks.json"

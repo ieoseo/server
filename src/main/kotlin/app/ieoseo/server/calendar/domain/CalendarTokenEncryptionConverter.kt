@@ -64,13 +64,20 @@ class CalendarTokenEncryptionConverter(
         if (!dbData.startsWith(MARKER)) return dbData // 과거 평문 행 통과
         val key = secretKey
             ?: error("암호화된 토큰을 읽으려면 ieoseo.calendar.token-encryption-key 가 필요합니다")
-        val packed = Base64.getDecoder().decode(dbData.substring(MARKER.length))
-        val iv = packed.copyOfRange(0, IV_BYTES)
-        val cipherText = packed.copyOfRange(IV_BYTES, packed.size)
-        val cipher = Cipher.getInstance(TRANSFORMATION).apply {
-            init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
+        return try {
+            val packed = Base64.getDecoder().decode(dbData.substring(MARKER.length))
+            val iv = packed.copyOfRange(0, IV_BYTES)
+            val cipherText = packed.copyOfRange(IV_BYTES, packed.size)
+            val cipher = Cipher.getInstance(TRANSFORMATION).apply {
+                init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
+            }
+            String(cipher.doFinal(cipherText), Charsets.UTF_8)
+        } catch (e: Exception) {
+            // 키 불일치(AEADBadTagException)·손상된 암호문 등 — 원시 crypto 예외가 불투명한
+            // 500 으로 새지 않도록 원인을 명확히 로깅(토큰·키 제외)하고 의미 있는 예외로 감싼다(C6).
+            log.error("캘린더 토큰 복호화 실패(키 불일치/손상 추정) — 토큰 컬럼을 읽을 수 없습니다", e)
+            throw CalendarTokenDecryptException("저장된 캘린더 토큰을 복호화할 수 없습니다", e)
         }
-        return String(cipher.doFinal(cipherText), Charsets.UTF_8)
     }
 
     private fun parseKey(rawKey: String): SecretKeySpec? {
@@ -91,3 +98,9 @@ class CalendarTokenEncryptionConverter(
         const val KEY_BYTES = 32 // AES-256
     }
 }
+
+/**
+ * 저장된 캘린더 토큰 복호화 실패(키 불일치·암호문 손상 등). 원시 crypto 예외가 불투명한 500 으로
+ * 새지 않도록 감싸는 신호다 — 메시지에 토큰·키를 담지 않는다(C6). 미처리 5xx 로 매핑된다.
+ */
+class CalendarTokenDecryptException(message: String, cause: Throwable) : RuntimeException(message, cause)

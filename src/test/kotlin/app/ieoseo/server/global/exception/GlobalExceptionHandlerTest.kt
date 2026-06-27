@@ -28,4 +28,12 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertEquals("NOT_FOUND", response.body?.error?.code)
     }
+
+    @Test
+    fun `NotFound 응답 메시지는 리소스 타입·id 를 노출하지 않는다(S3)`() {
+        val response = handler.handleNotFound(NotFoundException("Event", "secret-uuid-1234"))
+
+        // 클라이언트엔 일반 메시지만 — 리소스 타입·id 미노출(상세는 서버 로그만).
+        assertEquals("리소스를 찾을 수 없습니다", response.body?.error?.message)
+    }
 }

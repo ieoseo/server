@@ -23,10 +23,13 @@ class GlobalExceptionHandler {
     private val log = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
     @ExceptionHandler(NotFoundException::class)
-    fun handleNotFound(ex: NotFoundException): ResponseEntity<ApiResponse<Nothing>> =
-        ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-            ApiResponse.fail(ApiError(code = "NOT_FOUND", message = ex.message ?: "리소스를 찾을 수 없습니다")),
+    fun handleNotFound(ex: NotFoundException): ResponseEntity<ApiResponse<Nothing>> {
+        // 리소스 타입·id 가 담긴 ex.message 는 서버 로그에만 — 클라이언트엔 일반 문구만(S3).
+        log.warn("리소스 없음(404): {}", ex.message)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+            ApiResponse.fail(ApiError(code = "NOT_FOUND", message = "리소스를 찾을 수 없습니다")),
         )
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Nothing>> {

@@ -59,20 +59,23 @@ class RecurrenceInstanceService(
         val templates = taskRepository.findAllByUserIdAndRecurrenceFrequencyNot(userId, RecurrenceFrequency.NONE)
         if (templates.isEmpty()) return 0
 
-        val occupiedDates = existingDates(userId, rangeStart, rangeEnd)
+        val occupied = existingKeys(userId, rangeStart, rangeEnd)
         val toCreate = templates
             .flatMap { TaskRecurrenceExpander.expand(it, rangeStart, rangeEnd) }
-            .filter { it.date !in occupiedDates }
+            .filter { (it.date to it.title) !in occupied }
 
         if (toCreate.isEmpty()) return 0
         taskRepository.saveAll(toCreate)
         return toCreate.size
     }
 
-    /** 이미 해당 기간에 존재하는 태스크 날짜(중복 방지 키). */
-    private fun existingDates(userId: UUID, rangeStart: LocalDate, rangeEnd: LocalDate): Set<LocalDate> =
+    /**
+     * 이미 해당 기간에 존재하는 태스크의 `(날짜, 제목)` 키(중복 방지). 날짜만으로 막으면
+     * 같은 날 다른 반복 템플릿(또는 수동 태스크)이 점유했을 때 둘째 템플릿이 영구히 누락된다(F1).
+     */
+    private fun existingKeys(userId: UUID, rangeStart: LocalDate, rangeEnd: LocalDate): Set<Pair<LocalDate, String>> =
         taskRepository.findAllByUserIdAndDateBetween(userId, rangeStart, rangeEnd, Pageable.unpaged())
             .content
-            .map { it.date }
+            .map { it.date to it.title }
             .toSet()
 }

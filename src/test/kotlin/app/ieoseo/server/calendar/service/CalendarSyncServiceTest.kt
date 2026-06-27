@@ -145,4 +145,34 @@ class CalendarSyncServiceTest {
         assertEquals(ConnectionStatus.SYNC_FAILED, conn.status)
         verify(externalEventRepository, never()).save(anyExternal())
     }
+
+    @Test
+    fun `예상치 못한 예외도 해당 연결만 SYNC_FAILED 로 격리하고 다른 연결은 계속 동기화한다`() {
+        // CalendarSyncException 이 아닌 예외(Jackson 파싱·DB 등)도 격리해야 한다.
+        // 좁은 catch 면 syncAll 의 map 밖으로 전파돼 전체 동기화가 중단되고
+        // 해당 연결이 SYNC_FAILED 로도 표기되지 않는다(문서화한 계약 위반).
+        val failing = connection(CalendarProvider.GOOGLE)
+        val healthy = connection(CalendarProvider.NOTION)
+        `when`(connectionRepository.findAllByUserId(owner)).thenReturn(listOf(failing, healthy))
+        stubLookup() // 건강한 연결의 일정은 신규 저장
+
+        val boomClient = object : CalendarClient {
+            override val provider = CalendarProvider.GOOGLE
+            override fun fetchEvents(connection: CalendarConnection, from: LocalDate, to: LocalDate): List<ExternalEvent> =
+                throw IllegalStateException("Jackson 파싱 실패") // 비-CalendarSyncException
+        }
+        val okClient = fakeClient(CalendarProvider.NOTION, listOf(ext("n1", "노션 일정")))
+        val registry = CalendarClientRegistry(listOf(boomClient, okClient))
+
+        val results = service(registry).syncAll(owner, today)
+
+        // 실패 연결: 격리되어 SYNC_FAILED, imported 0
+        val failedResult = results.first { it.connection === failing }
+        assertEquals(0, failedResult.imported)
+        assertEquals(ConnectionStatus.SYNC_FAILED, failing.status)
+        // 건강한 연결: 영향 없이 계속 동기화됨
+        val healthyResult = results.first { it.connection === healthy }
+        assertEquals(1, healthyResult.imported)
+        assertEquals(ConnectionStatus.CONNECTED, healthy.status)
+    }
 }

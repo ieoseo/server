@@ -154,6 +154,22 @@ class TaskServiceTest {
     }
 
     @Test
+    fun `과거 날짜 태스크를 reopen 하면 오늘로 끌어와 TODAY 정합을 맞춘다(F13)`() {
+        val id = UUID.randomUUID()
+        val today = LocalDate.of(2026, 6, 10)
+        val past = today.minusDays(3)
+        val task = Task(id = id, userId = owner, title = "x", estimatedMinutes = 30, date = past)
+        task.state = TaskState.DONE
+        `when`(taskRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(task))
+
+        val result = service.reopen(owner, id, today = today)
+
+        // state=TODAY 인데 date 가 과거면 오늘 목록에 안 잡히는 고아가 된다 → 오늘로 이동.
+        assertEquals(TaskState.TODAY, result.state)
+        assertEquals(today, result.date)
+    }
+
+    @Test
     fun `완료 시 연결된 부채 해소(resolveForTask)를 호출한다`() {
         val id = UUID.randomUUID()
         val task = Task(id = id, userId = owner, title = "x", estimatedMinutes = 30, date = LocalDate.now())

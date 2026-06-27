@@ -41,13 +41,19 @@ class DebtGenerationService(
     fun run(today: LocalDate): Int {
         val originDate = today.minusDays(1)
         var created = 0
+        var failed = 0
         for (user in userRepository.findAll()) {
             created += try {
                 userDebtGenerator.generate(user.id, originDate)
             } catch (e: Exception) {
+                failed++
                 log.error("부채 생성 실패(user={}) — 다음 사용자로 계속", user.id, e)
                 0
             }
+        }
+        // 실패가 0 을 반환해 created 만으로는 성공/실패를 구분 못 하므로 요약을 남긴다(C5).
+        if (failed > 0) {
+            log.warn("DebtGenerationService: 부채 생성 중 {} 명 실패(성공 {} 건)", failed, created)
         }
         return created
     }

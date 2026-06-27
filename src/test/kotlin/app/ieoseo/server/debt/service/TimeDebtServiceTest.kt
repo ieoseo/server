@@ -4,8 +4,12 @@ import app.ieoseo.server.debt.domain.DebtStatus
 import app.ieoseo.server.task.domain.Task
 import app.ieoseo.server.task.domain.TaskState
 import app.ieoseo.server.debt.domain.TimeDebt
+import app.ieoseo.server.settings.domain.UserSettings
+import app.ieoseo.server.settings.domain.WeekStart
+import app.ieoseo.server.settings.repository.UserSettingsRepository
 import app.ieoseo.server.task.repository.TaskRepository
 import app.ieoseo.server.debt.repository.TimeDebtRepository
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -26,11 +30,17 @@ class TimeDebtServiceTest {
 
     private val timeDebtRepository: TimeDebtRepository = mock(TimeDebtRepository::class.java)
     private val taskRepository: TaskRepository = mock(TaskRepository::class.java)
-    private val maxDailyMinutes = 480
-    private val service = TimeDebtService(timeDebtRepository, taskRepository, maxDailyMinutes)
+    private val userSettingsRepository: UserSettingsRepository = mock(UserSettingsRepository::class.java)
+    private val service = TimeDebtService(timeDebtRepository, taskRepository, userSettingsRepository)
 
     private val monday = LocalDate.of(2026, 6, 1) // 월요일
     private val userId = UUID.randomUUID()
+
+    @BeforeEach
+    fun stubDefaultSettings() {
+        // 기본: 설정 없음 → 기본값(maxDailyMinutes 480, weekStart MON). F2·F8 테스트는 개별 override.
+        `when`(userSettingsRepository.findById(userId)).thenReturn(Optional.empty())
+    }
 
     @Test
     fun `주간 요약은 활성 부채만 합산하고 종료 상태는 제외한다`() {
@@ -164,6 +174,54 @@ class TimeDebtServiceTest {
 
         assertEquals(DebtStatus.OVERDUE, result.status)
         assertEquals(monday.plusDays(7), result.carriedToDate) // 다음 주 월요일
+    }
+
+    @Test
+    fun `자동 이월은 사용자별 maxDailyMinutes 설정을 사용한다(F2)`() {
+        val tuesday = monday.plusDays(1)
+        val debtId = UUID.randomUUID()
+        val taskId = UUID.randomUUID()
+        val debt = debt(minutes = 60, status = DebtStatus.PENDING, origin = monday, taskId = taskId)
+
+        `when`(timeDebtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt))
+        // 모든 잔여일에 200분 예약 → cap 240 이면 200+60=260>240 로 전부 스킵(연체),
+        // cap 480 이면 통과. 사용자 설정값을 쓰는지로 결과가 갈린다.
+        `when`(taskRepository.findAllByUserIdAndDateBetween(userId, monday, monday.plusDays(13), Pageable.unpaged()))
+            .thenReturn(
+                PageImpl(
+                    listOf(
+                        task(date = monday.plusDays(2), minutes = 200, state = TaskState.TODAY),
+                        task(date = monday.plusDays(3), minutes = 200, state = TaskState.TODAY),
+                        task(date = monday.plusDays(4), minutes = 200, state = TaskState.TODAY),
+                        task(date = monday.plusDays(5), minutes = 200, state = TaskState.TODAY),
+                        task(date = monday.plusDays(6), minutes = 200, state = TaskState.TODAY),
+                    ),
+                ),
+            )
+        `when`(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.empty())
+        `when`(userSettingsRepository.findById(userId))
+            .thenReturn(Optional.of(UserSettings(userId = userId, maxDailyMinutes = 240)))
+
+        val result = service.autoCarry(userId, debtId, today = tuesday)
+
+        // cap 240 이라 같은 주에 둘 곳이 없어 다음 주 월요일 연체로 배정된다.
+        assertEquals(DebtStatus.OVERDUE, result.status)
+        assertEquals(monday.plusDays(7), result.carriedToDate)
+    }
+
+    @Test
+    fun `주간 요약은 사용자 weekStart 설정(일요일 시작)을 따른다(F8)`() {
+        val wednesday = monday.plusDays(2)
+        val sunday = monday.minusDays(1) // 직전 일요일이 주 시작
+        `when`(userSettingsRepository.findById(userId))
+            .thenReturn(Optional.of(UserSettings(userId = userId, weekStart = WeekStart.SUN)))
+        `when`(timeDebtRepository.findAllByUserIdAndOriginDateBetween(userId, sunday, sunday.plusDays(6)))
+            .thenReturn(listOf(debt(minutes = 45, status = DebtStatus.PENDING, origin = monday)))
+
+        val summary = service.summary(userId, today = wednesday)
+
+        assertEquals(sunday, summary.weekStart)
+        assertEquals(45, summary.totalMinutes)
     }
 
     private fun debt(

@@ -110,6 +110,19 @@ class NotificationScheduleServiceTest {
         verify(notificationService).notifyStreakIfAbsent(userId, 7)
     }
 
+    @Test
+    fun `오늘 아직 미완료여도 어제까지 이어진 7일 스트릭을 알린다(F9)`() {
+        `when`(userRepository.findAll()).thenReturn(listOf(user()))
+        stubDdayEvents()
+        // 어제부터 7일 연속 DONE(오늘·8일 전은 없음). 잡은 오전에 돌 수 있어 오늘은 아직 미완료.
+        // 종전엔 cursor=today 라 streak=0 으로 알림이 누락됐다.
+        stubDoneTasks((1..7).map { doneTask(today.minusDays(it.toLong())) })
+
+        service.run(today)
+
+        verify(notificationService).notifyStreakIfAbsent(userId, 7)
+    }
+
     private fun user(): User = User(
         id = userId,
         email = "u@example.com",

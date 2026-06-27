@@ -99,8 +99,10 @@ class NotificationScheduleService(
             .map { it.date }
             .toSet()
 
+        // 잡은 오전에 돌 수 있어 '오늘'은 아직 미완료일 수 있다. 오늘이 완료면 오늘부터,
+        // 아니면 어제부터 거슬러 세어 어제까지 이어진 연속을 끊지 않는다(F9).
         var streak = 0
-        var cursor = today
+        var cursor = if (today in doneDates) today else today.minusDays(1)
         while (cursor in doneDates) {
             streak++
             cursor = cursor.minusDays(1)

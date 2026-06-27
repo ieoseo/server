@@ -83,10 +83,16 @@ class TaskService(
 
     /** 완료 취소(reopen): DONE → TODAY 로 되돌리고 실제 소요 기록을 비운다(체크 토글 UX). */
     @Transactional
-    fun reopen(userId: UUID, id: UUID): Task {
+    fun reopen(userId: UUID, id: UUID, today: LocalDate = LocalDate.now()): Task {
         val task = findById(userId, id)
         task.state = TaskTransitions.require(task.state, TaskState.TODAY)
         task.actualMinutes = null
+        // 과거 날짜 태스크를 reopen 하면 state=TODAY 인데 date 는 과거라 오늘 목록에 안 잡히는
+        // 고아가 된다 → 오늘로 끌어와 정합을 맞춘다(F13).
+        if (task.date.isBefore(today)) {
+            task.fromDate = task.fromDate ?: task.date
+            task.date = today
+        }
         // 완료 취소 시 해소됐던 부채를 PENDING 으로 복구한다.
         timeDebtService.restoreForTask(userId, id)
         return task

@@ -12,6 +12,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import java.time.Instant
 import java.time.LocalDate
 import java.util.Optional
 import java.util.UUID
@@ -71,5 +72,56 @@ class EventServiceTest {
         `when`(eventRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.empty())
 
         assertThrows<NotFoundException> { service.delete(owner, id) }
+    }
+
+    @Test
+    fun `종료 처리는 completedAt 을 세팅한다`() {
+        val id = UUID.randomUUID()
+        val event = Event(id = id, userId = owner, type = EventType.T1_DDAY, title = "x", date = LocalDate.of(2026, 8, 2))
+        `when`(eventRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(event))
+        val now = Instant.parse("2026-07-01T00:00:00Z")
+
+        val result = service.complete(owner, id, now)
+
+        assertEquals(now, result.completedAt)
+        assertEquals(true, result.completed)
+    }
+
+    @Test
+    fun `종료 처리는 멱등이다 - 이미 종료면 최초 시각을 유지한다`() {
+        val id = UUID.randomUUID()
+        val first = Instant.parse("2026-06-01T00:00:00Z")
+        val event = Event(
+            id = id, userId = owner, type = EventType.T1_DDAY, title = "x",
+            date = LocalDate.of(2026, 8, 2), completedAt = first,
+        )
+        `when`(eventRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(event))
+
+        val result = service.complete(owner, id, Instant.parse("2026-07-01T00:00:00Z"))
+
+        assertEquals(first, result.completedAt)
+    }
+
+    @Test
+    fun `종료 취소는 completedAt 을 null 로 되돌린다`() {
+        val id = UUID.randomUUID()
+        val event = Event(
+            id = id, userId = owner, type = EventType.T1_DDAY, title = "x",
+            date = LocalDate.of(2026, 8, 2), completedAt = Instant.parse("2026-06-01T00:00:00Z"),
+        )
+        `when`(eventRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.of(event))
+
+        val result = service.reopen(owner, id)
+
+        assertEquals(null, result.completedAt)
+        assertEquals(false, result.completed)
+    }
+
+    @Test
+    fun `없거나 타인 이벤트 종료 처리는 404 로 차단된다`() {
+        val id = UUID.randomUUID()
+        `when`(eventRepository.findByIdAndUserId(id, owner)).thenReturn(Optional.empty())
+
+        assertThrows<NotFoundException> { service.complete(owner, id) }
     }
 }

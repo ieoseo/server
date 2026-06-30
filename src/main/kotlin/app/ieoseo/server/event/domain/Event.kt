@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -71,7 +72,17 @@ class Event(
     /** 표시 색상(헥스 등). 표현용 메타데이터. */
     @Column(name = "color", length = 16)
     var color: String? = null,
+
+    /**
+     * 종료(완료) 처리 시각. null = 미종료(D-Day/기간이 지나도 D+로 계속 노출),
+     * 값 있음 = 유저가 명시적으로 종료(완료) 처리(홈 목록에서 숨김). FRD 5.1.
+     */
+    @Column(name = "completed_at")
+    var completedAt: Instant? = null,
 ) : BaseEntity() {
+
+    /** 종료(완료) 처리 여부 — [completedAt] 존재로 파생. */
+    val completed: Boolean get() = completedAt != null
 
     init {
         // 타입별 날짜 필수 불변식은 EventValidation(EventService 경유)에서 강제한다.

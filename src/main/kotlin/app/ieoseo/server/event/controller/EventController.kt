@@ -72,6 +72,26 @@ class EventController(
         @AuthenticationPrincipal principal: AuthPrincipal,
         @PathVariable id: UUID,
     ) = eventService.delete(principal.userId, id)
+
+    /** 종료(완료) 처리 — 홈 목록에서 숨긴다. 자동 삭제 대신 유저가 명시적으로 종료(FRD 5.1). */
+    @PostMapping("/{id}/complete")
+    fun complete(
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        @PathVariable id: UUID,
+    ): ApiResponse<EventResponse> {
+        val event = eventService.complete(principal.userId, id)
+        return ApiResponse.ok(EventResponse.from(event, eventService.dDay(event)))
+    }
+
+    /** 종료 취소(재개) — 다시 D-Day/D+ 로 노출한다. */
+    @PostMapping("/{id}/reopen")
+    fun reopen(
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        @PathVariable id: UUID,
+    ): ApiResponse<EventResponse> {
+        val event = eventService.reopen(principal.userId, id)
+        return ApiResponse.ok(EventResponse.from(event, eventService.dDay(event)))
+    }
 }
 
 internal fun <T : Any> Page<T>.toMeta(): Meta = Meta(

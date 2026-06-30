@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -63,5 +64,21 @@ class EventService(
     fun delete(userId: UUID, id: UUID) {
         val event = findById(userId, id)
         eventRepository.delete(event)
+    }
+
+    /** 종료(완료) 처리. 이미 종료면 멱등(시각 유지). 홈 목록에서 숨겨진다(FRD 5.1). */
+    @Transactional
+    fun complete(userId: UUID, id: UUID, now: Instant = Instant.now()): Event {
+        val event = findById(userId, id)
+        if (event.completedAt == null) event.completedAt = now
+        return event
+    }
+
+    /** 종료 취소(재개). 다시 D-Day/D+ 로 노출된다. 이미 미종료면 멱등. */
+    @Transactional
+    fun reopen(userId: UUID, id: UUID): Event {
+        val event = findById(userId, id)
+        event.completedAt = null
+        return event
     }
 }

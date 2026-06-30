@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -116,6 +117,29 @@ class EventControllerWebMvcTest {
             .andExpect(jsonPath("$.error.details[0].field").value("title"))
     }
 
+    @Test
+    fun `종료 처리는 completed=true 로 응답한다`() {
+        val id = UUID.randomUUID()
+        val event = Event(
+            id = id,
+            userId = userId,
+            type = EventType.T1_DDAY,
+            title = "정처기 실기",
+            date = LocalDate.of(2026, 8, 2),
+            completedAt = Instant.parse("2026-07-01T00:00:00Z"),
+        )
+        `when`(eventService.complete(eqv(userId), eqv(id), anyInstant())).thenReturn(event)
+        `when`(eventService.dDay(anyEvent(), anyDate())).thenReturn(
+            DDayResult(daysRemaining = 32, label = "D-32", phase = EventPhase.UPCOMING, urgency = Urgency.LOW),
+        )
+
+        mockMvc.perform(post("/api/v1/events/{id}/complete", id).with(authentication(asUser())))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.completed").value(true))
+            .andExpect(jsonPath("$.data.completedAt").exists())
+    }
+
     /** Kotlin non-null 파라미터용 Mockito any() 헬퍼(매처가 null 을 반환해 NPE 나는 문제 회피). */
     private fun anyEvent(): Event {
         org.mockito.ArgumentMatchers.any(Event::class.java)
@@ -125,5 +149,10 @@ class EventControllerWebMvcTest {
     private fun anyDate(): LocalDate {
         org.mockito.ArgumentMatchers.any(LocalDate::class.java)
         return LocalDate.now()
+    }
+
+    private fun anyInstant(): Instant {
+        org.mockito.ArgumentMatchers.any(Instant::class.java)
+        return Instant.now()
     }
 }

@@ -67,6 +67,10 @@ data class EventResponse(
     val pinned: Boolean,
     val memo: String?,
     val color: String?,
+    /** 종료(완료) 여부 — true 면 클라이언트가 홈 "다가오는 일정"에서 숨긴다(FRD 5.1). */
+    val completed: Boolean,
+    /** 종료(완료) 처리 시각. 미종료면 null. */
+    val completedAt: Instant?,
     /** server 권위 D-Day 파생 계산(FRD 5.1). 계산 컨텍스트가 없으면 null. */
     val dday: DDaySummary?,
     val createdAt: Instant,
@@ -84,6 +88,8 @@ data class EventResponse(
             pinned = event.pinned,
             memo = event.memo,
             color = event.color,
+            completed = event.completed,
+            completedAt = event.completedAt,
             dday = dDay?.let(DDaySummary::from),
             createdAt = event.createdAt,
             updatedAt = event.updatedAt,

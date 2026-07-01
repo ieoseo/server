@@ -8,6 +8,13 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    # Supabase 커넥션 풀러(session mode)는 클라이언트 15개 한도. 리비전 무중단 교체 시
+    # 구/신 리비전이 잠깐 공존하므로 리비전당 커넥션을 낮게 잡아 한도를 넘지 않게 한다.
+    # (기본값은 max=idle=10 → 리비전 2개면 20 > 15 로 EMAXCONNSESSION 발생.)
+    # 상세: docs/가이드/azure/배포.md, docs/02-아키텍처/기술스택.md.
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
 
 # API 문서(OpenAPI/Swagger UI)는 운영에서 비활성 — 공개 엔드포인트 정보노출 최소화(local 에선 활성).
 springdoc:

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0](https://github.com/ieoseo/server/compare/ieoseo-server-v0.5.0...ieoseo-server-v0.6.0) (2026-07-01)
+
+
+### Features
+
+* /auth/me 에 isNew 반환(신규 가입 닉네임 설정용) ([#52](https://github.com/ieoseo/server/issues/52)) ([a3f828c](https://github.com/ieoseo/server/commit/a3f828c4a4059eb677db56a2c5ae60c7ecdf7ba1)), closes [#51](https://github.com/ieoseo/server/issues/51)
+* 이벤트 종료(완료) 처리 API ([#56](https://github.com/ieoseo/server/issues/56)) ([17c8c0d](https://github.com/ieoseo/server/commit/17c8c0d5c6b3f196cd557a63fe56f429aee225c1)), closes [#55](https://github.com/ieoseo/server/issues/55)
+
+
+### Bug Fixes
+
+* deploy-server 시크릿 보간·로그 PII 제거 ([#54](https://github.com/ieoseo/server/issues/54)) ([788fe31](https://github.com/ieoseo/server/commit/788fe31ed64ad9a30c1992d752b0e92635573e55)), closes [#53](https://github.com/ieoseo/server/issues/53)
+* JWT 서명 알고리즘을 ES256 단독으로 축소(S6) ([#48](https://github.com/ieoseo/server/issues/48)) ([9e8a973](https://github.com/ieoseo/server/commit/9e8a973288cab9e29bbe1952b28280fa82510ef4))
+* public 테이블 RLS 활성화 마이그레이션(Supabase REST 노출 차단) ([#50](https://github.com/ieoseo/server/issues/50)) ([00a7109](https://github.com/ieoseo/server/commit/00a71093d3df98491991ca0a5b1258137cd171de)), closes [#49](https://github.com/ieoseo/server/issues/49)
+* V11 RLS 셀프락 부팅 실패와 커넥션 풀 소진 해결 ([#58](https://github.com/ieoseo/server/issues/58)) ([1df1230](https://github.com/ieoseo/server/commit/1df1230c4730e2f1b94dcff5dbf342e398e341f7)), closes [#57](https://github.com/ieoseo/server/issues/57)
+* 반복 인스턴스 중복 방지를 날짜+제목 키로(F1) ([#47](https://github.com/ieoseo/server/issues/47)) ([8774e53](https://github.com/ieoseo/server/commit/8774e53ad4bd5fb0e2bc6accb94d40af6b36d7b3))
+* 보안·관측성 하드닝(S1·S3·C5·C6) ([#44](https://github.com/ieoseo/server/issues/44)) ([746d082](https://github.com/ieoseo/server/commit/746d0829338c31fdbaaa7891ea204ae68bc4302d))
+* 스트릭 알림 시각 경계·reopen 과거 날짜 정합(F9·F13) ([#46](https://github.com/ieoseo/server/issues/46)) ([f0bfeeb](https://github.com/ieoseo/server/commit/f0bfeeb2cb31feabba60de38a52f495c75b1f2b0))
+* 자동 이월·주간 요약에 사용자 설정 반영(F2·F8) ([#45](https://github.com/ieoseo/server/issues/45)) ([d6dba72](https://github.com/ieoseo/server/commit/d6dba72a1f191ed1f2e6452f4e7b4442f63d82b4))
+* 캘린더 동기화 예외 격리 보강(C2) ([#42](https://github.com/ieoseo/server/issues/42)) ([da65122](https://github.com/ieoseo/server/commit/da651224cdf774ae3c5b373ea693cff52a6ed4f5))
+
 ## [0.5.0](https://github.com/ieoseo/server/compare/ieoseo-server-v0.0.1...ieoseo-server-v0.5.0) (2026-06-17)
 
 
